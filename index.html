@@ -1,0 +1,2526 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>המשחקים הבאים שלי</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏀</text></svg>">
+
+  <!-- PWA: מאפשר התקנה כ"אפליקציה" על מסך הבית בטלפון -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f1117">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="המשחקים שלי">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #0f1117;
+      color: #e8e8e8;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    /* ─── Top Nav ─── */
+    .top-nav {
+      max-width: 1100px;
+      margin: 0 auto 28px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .nav-btn {
+      padding: 9px 22px;
+      border-radius: 10px;
+      border: 1.5px solid #2a2d3e;
+      background: #1a1d2e;
+      color: #c4c9e0;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.3px;
+    }
+    .nav-btn:hover { background: #2a2d3e; color: #fff; }
+    .nav-btn.active { background: #1d4f2e; border-color: #22c55e; color: #22c55e; }
+    .nav-btn.region-btn { border-color: #38bdf8; color: #38bdf8; background: #0d1a2e; }
+    .nav-btn.region-btn:hover { background: #112035; }
+
+    #main-page.hidden { display: none; }
+
+    /* ─── Region Page (משחקים באזור) ─── */
+    #region-page { display: none; }
+    #region-page.visible { display: block; }
+
+    .region-hero {
+      max-width: 1100px;
+      margin: 0 auto 28px auto;
+      background: linear-gradient(135deg, #1a1d2e 0%, #0d1a2e 100%);
+      border: 1px solid #38bdf844;
+      border-radius: 16px;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .region-hero-emoji { font-size: 3.5rem; }
+    .region-hero-text h2 { font-size: 1.6rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .region-hero-text p  { font-size: 0.9rem; color: #8a8fa8; line-height: 1.5; }
+    .region-hero-badges { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .region-badge {
+      background: #2a2d3e;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #c4c9e0;
+    }
+
+    .region-controls {
+      max-width: 1100px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .region-filter-btn {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: 1.5px solid #2a2d3e;
+      background: #1a1d2e;
+      color: #8a8fa8;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .region-filter-btn:hover { border-color: #38bdf8; color: #38bdf8; }
+    .region-filter-btn.active { background: #0d1a2e; border-color: #38bdf8; color: #38bdf8; }
+    .region-search {
+      flex: 1;
+      min-width: 160px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1.5px solid #2a2d3e;
+      background: #1a1d2e;
+      color: #e8e8e8;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .region-search:focus { border-color: #38bdf8; }
+
+    .region-section-header {
+      max-width: 1100px;
+      margin: 24px auto 12px auto;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #38bdf8;
+      padding: 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .region-section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #2a2d3e;
+      margin-right: 8px;
+    }
+
+    .region-grid {
+      max-width: 1100px;
+      margin: 0 auto 8px auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-auto-flow: dense;
+      gap: 12px;
+    }
+
+    .region-card {
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 12px;
+      padding: 14px 16px;
+      transition: background 0.15s, border-color 0.15s;
+      border-right: 3px solid #38bdf8;
+      text-decoration: none;
+      display: block;
+    }
+    .region-card:hover { background: #1e2235; border-color: #38bdf880; }
+    .region-card.tier-major { border-right-color: #4ade80; }
+    .region-card.tier-minor { border-right-color: #facc15; }
+    .region-card.tier-college { border-right-color: #a855f7; }
+    .region-card.tier-motorsport { border-right-color: #f97316; }
+
+    .region-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+    .region-card-tier {
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-radius: 20px;
+      padding: 2px 9px;
+      white-space: nowrap;
+    }
+    .region-card.tier-major .region-card-tier { color: #4ade80; background: #12241a; }
+    .region-card.tier-minor .region-card-tier { color: #facc15; background: #2a2200; }
+    .region-card.tier-college .region-card-tier { color: #a855f7; background: #1a0d2e; }
+    .region-card.tier-motorsport .region-card-tier { color: #f97316; background: #2a1608; }
+    .region-card-sport {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #8a8fa8;
+      text-transform: uppercase;
+    }
+    .region-card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .region-card-detail {
+      font-size: 0.78rem;
+      color: #8a8fa8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 3px;
+    }
+    .region-card-link {
+      font-size: 0.75rem;
+      color: #38bdf8;
+      font-weight: 700;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ─── Month Page (משחקים בדאלאס בחודש הקרוב) ─── */
+    #month-page { display: none; }
+    #month-page.visible { display: block; }
+    .nav-btn.month-btn { border-color: #4ade80; color: #4ade80; background: #0d1f14; }
+    .nav-btn.month-btn:hover { background: #123420; }
+
+    .month-hero {
+      max-width: 1100px;
+      margin: 0 auto 28px auto;
+      background: linear-gradient(135deg, #1a1d2e 0%, #0d1f14 100%);
+      border: 1px solid #4ade8044;
+      border-radius: 16px;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .month-hero-emoji { font-size: 3.5rem; }
+    .month-hero-text h2 { font-size: 1.6rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .month-hero-text p  { font-size: 0.9rem; color: #8a8fa8; line-height: 1.5; }
+    .month-hero-badges { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .month-badge {
+      background: #2a2d3e;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #c4c9e0;
+    }
+
+    .month-controls {
+      max-width: 1100px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .month-filter-btn {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: 1.5px solid #2a2d3e;
+      background: #1a1d2e;
+      color: #8a8fa8;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .month-filter-btn:hover { border-color: #4ade80; color: #4ade80; }
+    .month-filter-btn.active { background: #0d1f14; border-color: #4ade80; color: #4ade80; }
+    .month-search {
+      flex: 1;
+      min-width: 160px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1.5px solid #2a2d3e;
+      background: #1a1d2e;
+      color: #e8e8e8;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .month-search:focus { border-color: #4ade80; }
+
+    .month-section-header {
+      max-width: 1100px;
+      margin: 24px auto 12px auto;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #4ade80;
+      padding: 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .month-section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #2a2d3e;
+      margin-right: 8px;
+    }
+
+    .month-grid {
+      max-width: 1100px;
+      margin: 0 auto 8px auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-auto-flow: dense;
+      gap: 12px;
+    }
+
+    .month-card {
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 12px;
+      padding: 14px 16px;
+      border-right: 3px solid #4ade80;
+    }
+    .month-card.tier-minor { border-right-color: #facc15; }
+    .month-card.tier-college { border-right-color: #a855f7; }
+    .month-card.tier-motorsport { border-right-color: #f97316; }
+
+    .month-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+    .month-card-tier {
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-radius: 20px;
+      padding: 2px 9px;
+      white-space: nowrap;
+    }
+    .month-card.tier-major .month-card-tier { color: #4ade80; background: #12241a; }
+    .month-card.tier-minor .month-card-tier { color: #facc15; background: #2a2200; }
+    .month-card.tier-college .month-card-tier { color: #a855f7; background: #1a0d2e; }
+    .month-card.tier-motorsport .month-card-tier { color: #f97316; background: #2a1608; }
+    .month-card-sport {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #8a8fa8;
+      text-transform: uppercase;
+    }
+    .month-card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 3px;
+    }
+    .month-card-league {
+      font-size: 0.78rem;
+      color: #8a8fa8;
+      margin-bottom: 10px;
+    }
+    .month-card-venue {
+      font-size: 0.76rem;
+      color: #8a8fa8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .month-card-games {
+      border-top: 1px solid #2a2d3e;
+      padding-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .month-game-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 0.8rem;
+    }
+    .month-game-date {
+      color: #4ade80;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .month-game-opp {
+      color: #c4c9e0;
+    }
+    .month-card-note {
+      font-size: 0.7rem;
+      color: #8a8fa8;
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 32px;
+      letter-spacing: 0.5px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .card.tennis::before  { background: #4ade80; }
+    .card.football::before { background: #60a5fa; }
+    .card.basketball::before { background: #f97316; }
+    .card.nfl::before { background: #ef4444; }
+    .card.baseball::before { background: #a78bfa; }
+
+    .sport-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      opacity: 0.6;
+    }
+
+    .card.tennis .sport-badge  { color: #4ade80; }
+    .card.football .sport-badge { color: #60a5fa; }
+    .card.basketball .sport-badge { color: #f97316; }
+    .card.nfl .sport-badge { color: #ef4444; }
+    .card.baseball .sport-badge { color: #a78bfa; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card-header-text { flex: 1; }
+
+    .player-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .entry-img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: #0f1117;
+    }
+
+    .entry-img.round {
+      border-radius: 50%;
+      object-fit: cover;
+      background: #2a2d3e;
+    }
+
+    .match-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .match-vs {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e8e8e8;
+    }
+
+    .match-detail {
+      font-size: 0.85rem;
+      color: #8a8fa8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .match-detail .icon { font-size: 0.9rem; }
+
+    .status-loading,
+    .status-error,
+    .status-empty {
+      font-size: 0.9rem;
+      padding: 10px 0;
+      color: #8a8fa8;
+    }
+    .status-error { color: #f87171; }
+
+    .tv-region {
+      color: #c4c9e0;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .cal-link { text-decoration: none; opacity: 0.75; transition: opacity 0.15s; }
+    .cal-link:hover { opacity: 1; }
+
+    .countdown {
+      display: inline-block;
+      margin-top: 10px;
+      background: #2a2d3e;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #c4c9e0;
+    }
+
+    /* ─── Daily Summary ─── */
+    .daily-summary {
+      max-width: 1100px;
+      margin: 0 auto 36px auto;
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 14px;
+      padding: 24px 28px;
+    }
+
+    .daily-date {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .daily-date span {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #8a8fa8;
+    }
+
+    .daily-sections {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .daily-section {
+      background: #12141f;
+      border-radius: 10px;
+      padding: 14px 16px;
+      border-top: 3px solid #333;
+    }
+
+    .daily-section.nba     { border-top-color: #f97316; }
+    .daily-section.ucl     { border-top-color: #60a5fa; }
+    .daily-section.nfl     { border-top-color: #ef4444; }
+    .daily-section.f1      { border-top-color: #e11d48; }
+    .daily-section.nhl     { border-top-color: #38bdf8; }
+    .daily-section.mlb     { border-top-color: #a78bfa; }
+    .daily-section.nascar  { border-top-color: #f59e0b; }
+    .daily-section.nascar-xfinity { border-top-color: #22d3ee; }
+    .daily-section.nascar-truck   { border-top-color: #84cc16; }
+    .daily-section.indycar        { border-top-color: #c084fc; }
+    .daily-section.motogp         { border-top-color: #f43f5e; }
+
+    /* ─── Yesterday Results ─── */
+    .yesterday-summary {
+      max-width: 1100px;
+      margin: 0 auto 36px auto;
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 14px;
+      padding: 24px 28px;
+    }
+
+    .yesterday-header {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #aab0c8;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .result-score {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
+      background: #0f1117;
+      border-radius: 6px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+
+    .daily-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .daily-section.nba    .daily-section-title { color: #f97316; }
+    .daily-section.ucl    .daily-section-title { color: #60a5fa; }
+    .daily-section.nfl    .daily-section-title { color: #ef4444; }
+    .daily-section.f1     .daily-section-title { color: #e11d48; }
+    .daily-section.nhl    .daily-section-title { color: #38bdf8; }
+    .daily-section.mlb    .daily-section-title { color: #a78bfa; }
+    .daily-section.nascar .daily-section-title { color: #f59e0b; }
+    .daily-section.nascar-xfinity .daily-section-title { color: #22d3ee; }
+    .daily-section.nascar-truck   .daily-section-title { color: #84cc16; }
+    .daily-section.indycar        .daily-section-title { color: #c084fc; }
+    .daily-section.motogp         .daily-section-title { color: #f43f5e; }
+    .daily-section.yesterday-nba { border-top-color: #f97316; }
+    .daily-section.yesterday-ucl { border-top-color: #60a5fa; }
+    .daily-section.yesterday-nba .daily-section-title { color: #f97316; }
+    .daily-section.yesterday-ucl .daily-section-title { color: #60a5fa; }
+
+    .daily-game {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid #2a2d3e;
+      gap: 8px;
+    }
+
+    .daily-game:last-child { border-bottom: none; }
+
+    .daily-game-teams {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #e8e8e8;
+    }
+
+    .daily-game-time {
+      font-size: 0.78rem;
+      color: #8a8fa8;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .daily-loading, .daily-empty {
+      font-size: 0.85rem;
+      color: #8a8fa8;
+      padding: 6px 0;
+    }
+
+    /* ─── clickable game rows ─── */
+    .daily-game.clickable {
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s;
+      padding: 7px 6px;
+      margin: 0 -6px;
+    }
+    .daily-game.clickable:hover { background: #1e2235; }
+
+    /* ─── Modal ─── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 16px;
+      padding: 28px 28px 24px;
+      max-width: 420px;
+      width: 90%;
+      position: relative;
+      animation: modalIn 0.18s ease;
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.93); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: none;
+      border: none;
+      color: #8a8fa8;
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: #fff; }
+
+    .modal-sport-bar {
+      height: 4px;
+      border-radius: 4px;
+      margin-bottom: 18px;
+    }
+
+    .modal-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-bottom: 6px;
+    }
+
+    .modal-teams {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+
+    .modal-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      color: #8a8fa8;
+      margin-bottom: 9px;
+    }
+    .modal-row .icon { font-size: 1rem; }
+    .modal-row strong { color: #c4c9e0; font-weight: 600; }
+
+    .modal-countdown {
+      display: inline-block;
+      margin-top: 14px;
+      background: #2a2d3e;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #c4c9e0;
+    }
+
+    .modal-cal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      padding: 8px 16px;
+      background: #2a2d3e;
+      border-radius: 8px;
+      color: #c4c9e0;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .modal-cal-btn:hover { background: #363a50; color: #fff; }
+
+    /* ─── Dallas This Week ─── */
+    .dallas-summary {
+      max-width: 1100px;
+      margin: 40px auto 36px auto;
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 14px;
+      padding: 24px 28px;
+    }
+    .dallas-header {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .dallas-sub {
+      font-size: 0.85rem;
+      color: #8a8fa8;
+      margin-bottom: 20px;
+    }
+    .dallas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .dallas-card {
+      background: #12141f;
+      border: 1px solid #2a2d3e;
+      border-radius: 12px;
+      padding: 16px 18px;
+      border-top: 3px solid #333;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .dallas-card:hover { background: #1e2235; }
+    .dallas-card-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .dallas-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .dallas-card-detail {
+      font-size: 0.82rem;
+      color: #8a8fa8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    /* ─── Mobile Responsive ─── */
+    @media (max-width: 600px) {
+      body { padding: 16px 10px; }
+
+      h1 { font-size: 1.2rem; margin-bottom: 20px; }
+
+      /* Nav */
+      .top-nav { gap: 8px; margin-bottom: 18px; }
+      .nav-btn { padding: 8px 14px; font-size: 0.82rem; }
+
+      /* Daily summary grid → 1 column */
+      .daily-sections { grid-template-columns: 1fr; gap: 10px; }
+      .daily-summary, .yesterday-summary { padding: 16px 14px; }
+      .daily-date { font-size: 1rem; }
+
+      /* Cards grid → 1 column */
+      .grid { grid-template-columns: 1fr; gap: 14px; }
+      .card { padding: 16px 14px; }
+      .player-name { font-size: 1rem; }
+      .entry-img { width: 36px; height: 36px; }
+
+      /* Region page */
+      .region-hero { padding: 16px 14px; gap: 12px; }
+      .region-hero-emoji { font-size: 2.5rem; }
+      .region-hero-text h2 { font-size: 1.2rem; }
+      .region-hero-text p { font-size: 0.8rem; }
+      .region-hero-badges { gap: 6px; }
+      .region-badge { font-size: 0.72rem; padding: 3px 8px; }
+      .region-controls { gap: 6px; }
+      .region-filter-btn { padding: 6px 10px; font-size: 0.78rem; }
+      .region-grid { grid-template-columns: 1fr; gap: 10px; }
+      .region-card { padding: 12px 12px; }
+      .region-section-header { font-size: 0.9rem; }
+
+      /* Month page */
+      .month-hero { padding: 16px 14px; gap: 12px; }
+      .month-hero-emoji { font-size: 2.5rem; }
+      .month-hero-text h2 { font-size: 1.2rem; }
+      .month-hero-text p { font-size: 0.8rem; }
+      .month-hero-badges { gap: 6px; }
+      .month-badge { font-size: 0.72rem; padding: 3px 8px; }
+      .month-controls { gap: 6px; }
+      .month-filter-btn { padding: 6px 10px; font-size: 0.78rem; }
+      .month-grid { grid-template-columns: 1fr; gap: 10px; }
+      .month-card { padding: 12px 12px; }
+      .month-section-header { font-size: 0.9rem; }
+
+      /* Dallas section */
+      .dallas-summary { padding: 16px 14px; }
+      .dallas-grid { grid-template-columns: 1fr; gap: 10px; }
+      .dallas-card { padding: 14px 12px; }
+
+      /* Modal */
+      .modal { padding: 22px 18px 18px; }
+      .modal-teams { font-size: 1.05rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="game-modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-inner">
+    <button class="modal-close" onclick="closeModal(null, true)">✕</button>
+    <div class="modal-sport-bar" id="modal-bar"></div>
+    <div class="modal-badge" id="modal-badge"></div>
+    <div class="modal-teams" id="modal-teams"></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<h1>המשחקים הבאים שלי</h1>
+
+<!-- Nav -->
+<div class="top-nav">
+  <button class="nav-btn active" id="btn-main" onclick="showPage('main')">&#127968; ספורט</button>
+  <button class="nav-btn region-btn" id="btn-region" onclick="showPage('region')">📍 משחקים באזור</button>
+  <button class="nav-btn month-btn" id="btn-month" onclick="showPage('month')">🗓️ משחקים בחודש הקרוב</button>
+</div>
+
+<!-- Main Page -->
+<div id="main-page">
+<div class="daily-summary">
+  <div class="daily-date" id="daily-date">📅 <span id="daily-date-text">טוען תאריך...</span></div>
+  <div class="daily-sections">
+    <div class="daily-section nba">
+      <div class="daily-section-title">🏀 NBA — היום</div>
+      <div id="daily-nba"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section ucl">
+      <div class="daily-section-title">⭐ ליגת האלופות — היום</div>
+      <div id="daily-ucl"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section nfl">
+      <div class="daily-section-title">🏈 NFL — הבא</div>
+      <div id="daily-nfl"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section f1">
+      <div class="daily-section-title">🏎️ F1 — הבא</div>
+      <div id="daily-f1"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section nhl">
+      <div class="daily-section-title">🏒 NHL — היום</div>
+      <div id="daily-nhl"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section mlb">
+      <div class="daily-section-title">⚾ MLB — היום</div>
+      <div id="daily-mlb"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section nascar">
+      <div class="daily-section-title">🏁 NASCAR Cup — הבא</div>
+      <div id="daily-nascar"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section nascar-xfinity">
+      <div class="daily-section-title">🏎️ NASCAR O'Reilly — הבא</div>
+      <div id="daily-nascar-xfinity"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section nascar-truck">
+      <div class="daily-section-title">🚚 NASCAR Truck — הבא</div>
+      <div id="daily-nascar-truck"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section indycar">
+      <div class="daily-section-title">🏎️ IndyCar — הבא</div>
+      <div id="daily-indycar"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section motogp">
+      <div class="daily-section-title">🏁 MotoGP — הבא</div>
+      <div id="daily-motogp"><div class="daily-loading">טוען...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Yesterday Results -->
+<div class="yesterday-summary">
+  <div class="yesterday-header">📊 <span id="yesterday-date-text">תוצאות אתמול</span></div>
+  <div class="daily-sections">
+    <div class="daily-section yesterday-nba">
+      <div class="daily-section-title">🏀 NBA — אתמול</div>
+      <div id="yesterday-nba"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section yesterday-ucl">
+      <div class="daily-section-title">⭐ ליגת האלופות — אתמול</div>
+      <div id="yesterday-ucl"><div class="daily-loading">טוען...</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<!-- Dallas This Week -->
+<div class="dallas-summary">
+  <div class="dallas-header">📍 דאלאס, טקסס — השבוע</div>
+  <div class="dallas-sub" id="dallas-week-label">משחקים ואירועי ספורט בדאלאס השבוע</div>
+  <div class="dallas-grid" id="dallas-grid"><div class="daily-loading">טוען...</div></div>
+</div>
+
+</div> <!-- /main-page -->
+
+<!-- Region Page -->
+<div id="region-page">
+  <div class="region-hero">
+    <div class="region-hero-emoji">📍</div>
+    <div class="region-hero-text">
+      <h2>משחקים באזור &mdash; דאלאס &ndash; פורט וורת&#39;, טקסס</h2>
+      <p>מדריך מלא לכל קבוצות וליגות הספורט הפעילות במטרופולין דאלאס&ndash;פורט וורת&#39; (DFW): ליגות מקצועיות ראשיות, ליגות פיתוח ומשניות, ספורט קולג&#39;ים ואירועי ספורט מוטורי וגולף &bull; שעון טקסס (America/Chicago)</p>
+      <div class="region-hero-badges">
+        <span class="region-badge">🏆 ליגות ראשיות</span>
+        <span class="region-badge">🥈 ליגות משניות ופיתוח</span>
+        <span class="region-badge">🎓 ספורט קולג'</span>
+        <span class="region-badge">🏁 מוטורי וגולף</span>
+      </div>
+    </div>
+  </div>
+  <div class="region-controls">
+    <button class="region-filter-btn active" onclick="regionFilter('all',this)">הכל</button>
+    <button class="region-filter-btn" onclick="regionFilter('major',this)">ליגות ראשיות</button>
+    <button class="region-filter-btn" onclick="regionFilter('minor',this)">ליגות משניות</button>
+    <button class="region-filter-btn" onclick="regionFilter('college',this)">קולג'</button>
+    <button class="region-filter-btn" onclick="regionFilter('motorsport',this)">מוטורי / גולף</button>
+    <input class="region-search" type="text" placeholder="🔍 חפש קבוצה / ליגה / ספורט..." oninput="regionSearch(this.value)">
+  </div>
+  <div id="region-container"></div>
+</div>
+
+<!-- Month Page -->
+<div id="month-page">
+  <div class="month-hero">
+    <div class="month-hero-emoji">🗓️</div>
+    <div class="month-hero-text">
+      <h2>משחקים בדאלאס בחודש הקרוב</h2>
+      <p>כל משחקי הבית שנמצאו בדאלאס&ndash;פורט וורת&#39; בין 15 בספטמבר ל-15 באוקטובר 2026 (שעון טקסס), לפי לוחות הזמנים הרשמיים שפורסמו. ליגות ללא משחקי בית מתוכננים בטווח הזה (עונה סגורה/אין אצטדיון פנוי כרגע) לא מופיעות כאן. נוספו גם מרוצי הפורמולה 1 שחלים בטווח הזה — אלה שידורי טלוויזיה, לא משחקי בית בדאלאס.</p>
+      <div class="month-hero-badges">
+        <span class="month-badge">📅 15/09 &ndash; 15/10/2026</span>
+        <span class="month-badge">🏆 ליגות ראשיות</span>
+        <span class="month-badge">🥈 ליגות משניות</span>
+        <span class="month-badge">🎓 קולג'</span>
+        <span class="month-badge">🏎️ פורמולה 1</span>
+      </div>
+    </div>
+  </div>
+  <div class="month-controls">
+    <button class="month-filter-btn active" onclick="monthFilter('all',this)">הכל</button>
+    <button class="month-filter-btn" onclick="monthFilter('major',this)">ליגות ראשיות</button>
+    <button class="month-filter-btn" onclick="monthFilter('minor',this)">ליגות משניות</button>
+    <button class="month-filter-btn" onclick="monthFilter('college',this)">קולג'</button>
+    <button class="month-filter-btn" onclick="monthFilter('motorsport',this)">פורמולה 1</button>
+    <input class="month-search" type="text" placeholder="🔍 חפש קבוצה / ליגה / יריב..." oninput="monthSearch(this.value)">
+  </div>
+  <div id="month-container"></div>
+</div>
+
+<script>
+// כל פריט מגדיר: שם תצוגה, ספורט, ופונקציית fetch שמחזירה אובייקט { vs, tournament, date, time }
+// או throws אם אין מידע
+
+const RAPIDAPI_KEY = ''; // הוסר לפני פרסום ציבורי - לא היה בשימוש בקוד (ראו CLAUDE.md)
+
+const entries = [
+
+  {
+    name: 'ליברפול',
+    sport: 'football',
+    image: 'https://a.espncdn.com/i/teamlogos/soccer/500/364.png',
+    fetch: () => fetchFootballNext(364, 'Liverpool'),
+  },
+  {
+    name: 'דני אבדיה — Portland Trail Blazers',
+    sport: 'basketball',
+    image: 'https://a.espncdn.com/i/headshots/nba/players/full/4683021.png',
+    round: true,
+    fetch: () => fetchBasketballNext(22),
+  },
+
+  {
+    name: 'New York Mets',
+    sport: 'baseball',
+    image: 'https://a.espncdn.com/i/teamlogos/mlb/500/nym.png',
+    fetch: () => fetchMLBNext(21),
+  },
+  {
+    name: 'San Francisco 49ers',
+    sport: 'nfl',
+    image: 'https://a.espncdn.com/i/teamlogos/nfl/500/sf.png',
+    fetch: () => fetchNFLNext(25),
+  },
+
+  {
+    name: 'מכבי תל אביב בכדורסל',
+    sport: 'basketball',
+    image: 'https://r2.thesportsdb.com/images/media/team/badge/io01a91521148756.png',
+    fetch: () => fetch365scores(631),
+  },
+  {
+    name: 'Boca Juniors',
+    sport: 'football',
+    image: 'https://a.espncdn.com/i/teamlogos/soccer/500/5.png',
+    fetch: () => fetchFootballNext(5, 'Boca Juniors'),
+  },
+  {
+    name: 'FC Barcelona',
+    sport: 'football',
+    image: 'https://a.espncdn.com/i/teamlogos/soccer/500/83.png',
+    fetch: () => fetchFootballNext(83, 'Barcelona'),
+  },
+  {
+    name: 'Real Madrid',
+    sport: 'football',
+    image: 'https://a.espncdn.com/i/teamlogos/soccer/500/86.png',
+    fetch: () => fetchFootballNext(86, 'Real Madrid'),
+  },
+  {
+    name: 'נבחרת ברזיל',
+    sport: 'football',
+    image: 'https://upload.wikimedia.org/wikipedia/en/0/05/Flag_of_Brazil.svg',
+    fetch: () => fetchFootballNext(205, 'Brazil'),
+  },
+  {
+    name: 'נבחרת ארגנטינה',
+    sport: 'football',
+    image: 'https://a.espncdn.com/i/teamlogos/soccer/500/202.png',
+    fetch: () => fetchFootballNext(202, 'Argentina'),
+  },
+  // כאן יתווספו קבוצות ושחקנים נוספים
+];
+
+// ─── Google Calendar helper ──────────────────────────────────────────────
+function googleCalendarURL(title, dateStr, detail) {
+  const start = new Date(dateStr);
+  if (isNaN(start)) return null;
+  const end = new Date(start.getTime() + 2 * 3600 * 1000);
+  const fmt = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    '&text=' + encodeURIComponent(title) +
+    '&dates=' + fmt(start) + '/' + fmt(end) +
+    '&details=' + encodeURIComponent(detail || '') +
+    '&crm=POPUP&crmMin=15';
+}
+
+// ─── TV helpers ───────────────────────────────────────────────────────────
+function tennisTVUS(tournamentName) {
+  const t = (tournamentName || '').toLowerCase();
+  if (t.includes('australian open'))                              return 'ESPN2 / ESPN+';
+  if (t.includes('french open') || t.includes('roland garros'))  return 'Tennis Channel / NBC Sports';
+  if (t.includes('wimbledon'))                                    return 'ESPN / ESPN2 / ABC';
+  if (t.includes('us open'))                                      return 'ESPN2 / ESPN+';
+  return 'Tennis Channel';
+}
+
+function footballTVStatic(leagueName) {
+  const l = (leagueName || '').toLowerCase();
+  if (l.includes('premier league'))   return { ar: null, uk: 'Sky Sports PL / TNT Sports', us: 'Peacock / USA Network' };
+  if (l.includes('champions league')) return { ar: null, uk: 'TNT Sports', us: 'Paramount+ / CBS Sports Network' };
+  if (l.includes('europa league'))    return { ar: null, uk: 'TNT Sports', us: 'Paramount+ / CBS Sports Network' };
+  if (l.includes('fa cup'))           return { ar: null, uk: 'BBC One / ITV / TNT Sports', us: 'ESPN+' };
+  if (l.includes('libertadores'))     return { ar: 'ESPN Premium / Star+', uk: null, us: 'Paramount+' };
+  if (l.includes('sudamericana'))     return { ar: 'ESPN Premium / Star+', uk: null, us: 'Paramount+' };
+  return { ar: null, uk: null, us: null };
+}
+
+// ─── Tennis (ESPN, no key needed) ────────────────────────────────────────
+async function fetchTennisNext(playerName) {
+  const lastName = playerName.split(' ').pop().toLowerCase();
+  const now = Date.now();
+
+  for (let day = 0; day < 14; day++) {
+    const dateStr = new Date(now + day * 86400000).toISOString().slice(0,10).replace(/-/g,'');
+    let data;
+    try {
+      const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard?dates=${dateStr}`);
+      data = await res.json();
+    } catch { continue; }
+
+    for (const event of (data.events || [])) {
+      for (const grouping of (event.groupings || event.competitions ? [event] : [])) {
+        const comps = grouping.groupings
+          ? grouping.groupings.flatMap(g => g.competitions || [])
+          : (grouping.competitions || []);
+        for (const comp of comps) {
+          if (comp.status?.type?.completed) continue;
+          const competitors = comp.competitors || [];
+          const names = competitors.map(c => c.athlete?.displayName || '');
+          const idx = names.findIndex(n => n.toLowerCase().includes(lastName));
+          if (idx === -1) continue;
+          const tournament = event.name || event.shortName || '—';
+          return {
+            vs: names[idx === 0 ? 1 : 0] || 'טרם נקבע',
+            detail: tournament + (comp.round?.displayName ? ' · ' + comp.round.displayName : ''),
+            date: comp.date || '',
+            tv: [{ region: 'ארה"ב', channel: tennisTVUS(tournament) }],
+          };
+        }
+      }
+    }
+  }
+  throw new Error('no_upcoming');
+}
+
+// ─── MLB (ESPN, no key needed) ───────────────────────────────────────────
+async function fetchMLBNext(teamId) {
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/${teamId}/schedule?fixture=true`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = await res.json();
+  const now = Date.now();
+  const events = (data.events || []).filter(e => new Date(e.date).getTime() > now);
+  if (!events.length) throw new Error('no_upcoming');
+
+  const event = events[0];
+  const comp = event.competitions?.[0] || {};
+  const competitors = comp.competitors || [];
+  const us = competitors.find(c => String(c.team?.id) === String(teamId));
+  const them = competitors.find(c => String(c.team?.id) !== String(teamId));
+  const homeAway = us?.homeAway === 'home' ? '🏠 בית' : '✈️ חוץ';
+  const league = event.season?.displayName || 'MLB';
+
+  const broadcasts = event.broadcasts || [];
+  const usBroadcast = broadcasts.filter(b => !b.region || b.region === 'us')
+    .map(b => b.media?.shortName).filter(Boolean).join(' / ') || 'ESPN / Apple TV+';
+
+  return {
+    vs: them?.team?.displayName || '?',
+    detail: `${league} · ${homeAway}`,
+    date: event.date || '',
+    tv: [{ region: 'ארה"ב', channel: usBroadcast }],
+  };
+}
+
+// ─── NFL (ESPN, no key needed) ───────────────────────────────────────────
+async function fetchNFLNext(teamId) {
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${teamId}/schedule?fixture=true`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = await res.json();
+  const now = Date.now();
+  const events = (data.events || []).filter(e => new Date(e.date).getTime() > now);
+  if (!events.length) throw new Error('no_upcoming');
+
+  const event = events[0];
+  const comp = event.competitions?.[0] || {};
+  const competitors = comp.competitors || [];
+  const us = competitors.find(c => String(c.team?.id) === String(teamId));
+  const them = competitors.find(c => String(c.team?.id) !== String(teamId));
+  const homeAway = us?.homeAway === 'home' ? '🏠 בית' : '✈️ חוץ';
+  const week = comp.notes?.find(n => n.type === 'event')?.headline || event.season?.displayName || 'NFL';
+
+  return {
+    vs: them?.team?.displayName || '?',
+    detail: `NFL · ${homeAway}${week ? ' · ' + week : ''}`,
+    date: event.date || '',
+    tv: [],
+  };
+}
+
+// ─── Israeli Football (365scores) ────────────────────────────────────────
+async function fetch365scores(competitorId) {
+  const res = await fetch(
+    `https://webws.365scores.com/web/games/current/?appTypeId=5&langId=4&timezoneName=Asia/Jerusalem&competitors=${competitorId}`
+  );
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = await res.json();
+
+  const now = Date.now();
+  const game = (data.games || [])
+    .filter(g => new Date(g.startTime).getTime() > now)
+    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))[0];
+
+  if (!game) throw new Error('no_upcoming');
+
+  const isHome = game.homeCompetitor?.id === competitorId;
+  const opponent = isHome ? game.awayCompetitor?.name : game.homeCompetitor?.name;
+  const homeAway = isHome ? '🏠 בית' : '✈️ חוץ';
+  const league = game.competitionDisplayName || 'ליגת העל';
+
+  return {
+    vs: opponent || '?',
+    detail: `${league} · ${homeAway}`,
+    date: game.startTime || '',
+    tv: [{ region: 'ישראל', channel: 'ספורט 5' }],
+  };
+}
+
+// ─── Basketball — NBA (ESPN, no key needed) ───────────────────────────────
+async function fetchBasketballNext(teamId) {
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${teamId}/schedule?fixture=true`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = await res.json();
+  const now = Date.now();
+  const events = (data.events || [])
+    .filter(e => !e.status?.type?.completed && new Date(e.date).getTime() > now)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (!events.length) throw new Error('no_upcoming');
+
+  const event = events[0];
+  const comp = event.competitions?.[0] || {};
+  const competitors = comp.competitors || [];
+  const us = competitors.find(c => String(c.team?.id) === String(teamId));
+  const them = competitors.find(c => String(c.team?.id) !== String(teamId));
+  const homeAway = us?.homeAway === 'home' ? '🏠 בית' : '✈️ חוץ';
+  const league = event.season?.displayName || 'NBA';
+
+  const broadcasts = event.broadcasts || [];
+  const ilChannel = 'ספורט 5';
+  const usBroadcast = broadcasts.filter(b => !b.region || b.region === 'us')
+    .map(b => b.media?.shortName).filter(Boolean).join(' / ') || 'ESPN / ABC / NBC / Prime Video';
+
+  const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
+
+  return {
+    vs: them?.team?.displayName || '?',
+    detail: `${league} · ${homeAway}${note ? ' · ' + note : ''}`,
+    date: event.date || '',
+    tv: [
+      { region: 'ישראל', channel: ilChannel },
+      { region: 'ארה"ב',  channel: usBroadcast },
+    ],
+  };
+}
+
+// ─── Football (ESPN, no key needed) ──────────────────────────────────────
+async function fetchFootballNext(teamId, teamName) {
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/all/teams/${teamId}/schedule?fixture=true`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = await res.json();
+  const events = data.events || [];
+  if (!events.length) throw new Error('no_upcoming');
+
+  const event = events[0];
+  const comp = event.competitions?.[0] || {};
+  const competitors = comp.competitors || [];
+  const us = competitors.find(c => String(c.team?.id) === String(teamId));
+  const them = competitors.find(c => String(c.team?.id) !== String(teamId));
+  const homeAway = us?.homeAway === 'home' ? '🏠 בית' : '✈️ חוץ';
+  const league = event.league?.name || event.season?.displayName || '—';
+
+  // TV from ESPN broadcasts + static fallback
+  const broadcasts = event.broadcasts || [];
+  const arBroadcast = broadcasts.filter(b => b.region === 'ar').map(b => b.media?.shortName).filter(Boolean).join(' / ');
+  const ukBroadcast = broadcasts.filter(b => b.region === 'gb').map(b => b.media?.shortName).filter(Boolean).join(' / ');
+  const usBroadcast = broadcasts.filter(b => b.region === 'us').map(b => b.media?.shortName).filter(Boolean).join(' / ');
+  const fallback = footballTVStatic(league);
+  const tvAR = arBroadcast || fallback.ar;
+  const tvUK = ukBroadcast || fallback.uk;
+  const tvUS = usBroadcast || fallback.us;
+
+  const tv = [];
+  if (tvAR) tv.push({ region: 'ארגנטינה', channel: tvAR });
+  if (tvUK) tv.push({ region: 'אנגליה', channel: tvUK });
+  if (tvUS) tv.push({ region: 'ארה"ב', channel: tvUS });
+
+  return {
+    vs: them?.team?.displayName || '?',
+    detail: `${league} · ${homeAway}`,
+    date: event.date || '',
+    tv,
+  };
+}
+
+// ─── בניית הכרטיסיות ──────────────────────────────────────────────────────
+function parseDate(dateStr) {
+  if (!dateStr || dateStr === '—') return null;
+  const d = new Date(dateStr);
+  return isNaN(d) ? null : d;
+}
+
+function formatCountdown(dateStr) {
+  const dt = parseDate(dateStr);
+  if (!dt) return '';
+  const diffMs = dt - Date.now();
+  if (diffMs < 0) return 'כבר התחיל';
+  const days = Math.floor(diffMs / 86400000);
+  const hours = Math.floor((diffMs % 86400000) / 3600000);
+  if (days > 0) return `בעוד ${days} ימים`;
+  if (hours > 0) return `בעוד ${hours} שעות`;
+  return 'היום';
+}
+
+function formatDate(dateStr) {
+  return formatDateTX(dateStr);
+}
+
+async function buildCard(entry) {
+  const card = document.createElement('div');
+  card.className = `card ${entry.sport}`;
+  const imgHtml = entry.image
+    ? `<img class="entry-img${entry.round ? ' round' : ''}" src="${entry.image}" onerror="this.style.display='none'" />`
+    : '';
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-header-text">
+        <div class="sport-badge">${{tennis:'טניס',football:'כדורגל',basketball:'כדורסל',nfl:'NFL',baseball:'בייסבול'}[entry.sport] || entry.sport}</div>
+        <div class="player-name">${{tennis:'🎾',football:'⚽',basketball:'🏀',nfl:'🏈',baseball:'⚾'}[entry.sport] || '🏅'} ${entry.name}</div>
+      </div>
+      ${imgHtml}
+    </div>
+    <div class="match-info"><div class="status-loading">טוען...</div></div>
+  `;
+  document.getElementById('grid').appendChild(card);
+
+  const info = card.querySelector('.match-info');
+
+  try {
+    const match = await entry.fetch();
+    const countdown = formatCountdown(match.date);
+    const tvLines = (match.tv || []).map(item =>
+      `<div class="match-detail"><span class="icon">📺</span> <span class="tv-region">${item.region}:</span> ${item.channel}</div>`
+    ).join('');
+    info.innerHTML = `
+      <div class="match-vs">נגד: ${match.vs}</div>
+      <div class="match-detail"><span class="icon">🏆</span> ${match.detail || '—'}</div>
+      <div class="match-detail">${(() => { const tvDesc = (match.tv || []).map(t => `📺 ${t.region}: ${t.channel}`).join('\n'); const desc = [match.detail, tvDesc].filter(Boolean).join('\n'); const u = googleCalendarURL(`${entry.name} נגד ${match.vs}`, match.date, desc); return u ? `<a href="${u}" target="_blank" class="cal-link" title="הוסף ללוח שנה של גוגל"><span class="icon">📅</span></a>` : '<span class="icon">📅</span>'; })()} ${formatDate(match.date)}</div>
+      ${tvLines}
+      ${countdown ? `<span class="countdown">${countdown}</span>` : ''}
+    `;
+  } catch (e) {
+    if (e.message === 'no_upcoming') {
+      info.innerHTML = `<div class="status-empty">אין משחקים קרובים</div>`;
+    } else {
+      info.innerHTML = `<div class="status-error">שגיאה: ${e.message}</div>`;
+    }
+  }
+}
+
+entries.forEach(buildCard);
+
+// ─── Timezone: Texas (America/Chicago) ──────────────────────────────────
+const TX_TZ = 'America/Chicago';
+
+function nowInTX() {
+  // Returns a Date-like object adjusted to Texas local time
+  return new Date(new Date().toLocaleString('en-US', { timeZone: TX_TZ }));
+}
+
+function txDateString(offsetDays = 0) {
+  // Returns YYYYMMDD string for Texas local date ± offsetDays
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const txStr = d.toLocaleDateString('en-CA', { timeZone: TX_TZ }); // YYYY-MM-DD
+  return txStr.replace(/-/g, '');
+}
+
+// ─── Daily Summary ────────────────────────────────────────────────────────
+
+function formatTimeHe(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', timeZone: TX_TZ });
+}
+
+// תאריך + שעה קצר לתצוגה בשורות המשחק
+function formatGameDateTime(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  const date = d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', timeZone: TX_TZ });
+  const time = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', timeZone: TX_TZ });
+  return `${date} ${time}`;
+}
+
+function formatDateTX(dateStr) {
+  const d = new Date(dateStr);
+  if (!d || isNaN(d)) return '—';
+  return d.toLocaleString('he-IL', {
+    weekday: 'short', day: 'numeric', month: 'short',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: TX_TZ,
+  });
+}
+
+// Set today's date header (Texas time)
+(function() {
+  const txNow = nowInTX();
+  const days = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  const dayName = days[txNow.getDay()];
+  const dateFormatted = `${txNow.getDate()} ב${months[txNow.getMonth()]} ${txNow.getFullYear()}`;
+  document.getElementById('daily-date-text').textContent = `יום ${dayName}, ${dateFormatted} (שעון טקסס)`;
+
+  // Yesterday label
+  const txYest = new Date(txNow);
+  txYest.setDate(txYest.getDate() - 1);
+  const yestFormatted = `${txYest.getDate()} ב${months[txYest.getMonth()]} ${txYest.getFullYear()}`;
+  document.getElementById('yesterday-date-text').textContent = `📊 תוצאות אתמול — ${yestFormatted}`;
+})();
+
+// Fetch all NBA games today
+async function loadDailyNBA() {
+  const el = document.getElementById('daily-nba');
+  try {
+    const dateStr = txDateString(0);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">אין משחקי NBA היום</div>';
+      return;
+    }
+    el.innerHTML = events.map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+      const home = homeTeam?.team?.abbreviation || '?';
+      const away = awayTeam?.team?.abbreviation || '?';
+      const time = formatGameDateTime(ev.date);
+      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+      const nbaTV = [
+        { region: 'ישראל', channel: 'ספורט 5' },
+        { region: 'ארה"ב', channel: 'ESPN / ABC / TNT / Prime Video' },
+      ];
+      const seriesSummary = comp.series?.summary
+        || comp.notes?.find(n => n.type === 'event')?.headline
+        || null;
+      const modalData = {
+        sport: 'basketball', league: 'NBA',
+        home: homeTeam?.team?.displayName || home,
+        away: awayTeam?.team?.displayName || away,
+        date: ev.date, tv: nbaTV, detail: 'NBA',
+        series: seriesSummary,
+        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+        completed: !!comp.status?.type?.completed
+      };
+      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-time">${status}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NBA</div>';
+  }
+}
+
+// Fetch all UCL games today
+async function loadDailyUCL() {
+  const el = document.getElementById('daily-ucl');
+  try {
+    const dateStr = txDateString(0);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">אין משחקי ליגת האלופות היום</div>';
+      return;
+    }
+    el.innerHTML = events.map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+      const home = homeTeam?.team?.shortDisplayName || '?';
+      const away = awayTeam?.team?.shortDisplayName || '?';
+      const time = formatGameDateTime(ev.date);
+      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+      const broadcasts = comp.broadcasts || ev.broadcasts || [];
+      const tv = [];
+      const uk = broadcasts.filter(b => b.region === 'gb').map(b => b.media?.shortName).filter(Boolean).join(' / ');
+      const us = broadcasts.filter(b => b.region === 'us').map(b => b.media?.shortName).filter(Boolean).join(' / ');
+      if (uk) tv.push({ region: 'אנגליה', channel: uk });
+      if (us) tv.push({ region: 'ארה"ב', channel: us });
+      if (!tv.length) tv.push({ region: 'ארה"ב', channel: 'Paramount+ / CBS Sports' });
+      const uclSeries = comp.series?.summary
+        || comp.notes?.find(n => n.type === 'event')?.headline
+        || null;
+      const modalData = {
+        sport: 'football', league: 'ליגת האלופות',
+        home: homeTeam?.team?.displayName || home,
+        away: awayTeam?.team?.displayName || away,
+        date: ev.date, tv, detail: 'UEFA Champions League',
+        series: uclSeries,
+        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+        completed: !!comp.status?.type?.completed
+      };
+      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-time">${status}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת ליגת האלופות</div>';
+  }
+}
+
+loadDailyNBA();
+loadDailyUCL();
+loadDailyNFL();
+loadDailyF1();
+loadDailyNHL();
+loadDailyMLB();
+loadDailyNASCAR();
+loadYesterdayNBA();
+loadYesterdayUCL();
+
+// ─── NHL Today ───────────────────────────────────────────────────────────
+async function loadDailyNHL() {
+  const el = document.getElementById('daily-nhl');
+  try {
+    const dateStr = txDateString(0);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">אין משחקי NHL היום</div>';
+      return;
+    }
+    el.innerHTML = events.slice(0, 8).map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+      const home = homeTeam?.team?.abbreviation || '?';
+      const away = awayTeam?.team?.abbreviation || '?';
+      const time = formatGameDateTime(ev.date);
+      const seriesSummary = comp.series?.summary
+        || comp.notes?.find(n => n.type === 'event')?.headline
+        || null;
+      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+      const nhlTV = [{ region: 'ארה"ב', channel: 'ESPN / ESPN+ / TNT / Max' }];
+      const modalData = {
+        sport: 'hockey', league: 'NHL',
+        home: homeTeam?.team?.displayName || home,
+        away: awayTeam?.team?.displayName || away,
+        date: ev.date, tv: nhlTV, detail: 'NHL',
+        series: seriesSummary,
+        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+        completed: !!comp.status?.type?.completed
+      };
+      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-time">${status}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NHL</div>';
+  }
+}
+
+// ─── MLB Today ────────────────────────────────────────────────────────────
+async function loadDailyMLB() {
+  const el = document.getElementById('daily-mlb');
+  try {
+    const dateStr = txDateString(0);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">אין משחקי MLB היום</div>';
+      return;
+    }
+    el.innerHTML = events.slice(0, 8).map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+      const home = homeTeam?.team?.abbreviation || '?';
+      const away = awayTeam?.team?.abbreviation || '?';
+      const time = formatGameDateTime(ev.date);
+      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+      const mlbTV = [{ region: 'ארה"ב', channel: 'ESPN / Apple TV+ / Peacock' }];
+      const modalData = {
+        sport: 'baseball', league: 'MLB',
+        home: homeTeam?.team?.displayName || home,
+        away: awayTeam?.team?.displayName || away,
+        date: ev.date, tv: mlbTV, detail: 'MLB',
+        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+        completed: !!comp.status?.type?.completed
+      };
+      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-time">${status}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת MLB</div>';
+  }
+}
+
+// ─── Yesterday Results ────────────────────────────────────────────────────
+
+async function loadYesterdayNBA() {
+  const el = document.getElementById('yesterday-nba');
+  try {
+    const dateStr = txDateString(-1);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">לא היו משחקי NBA אתמול</div>';
+      return;
+    }
+    el.innerHTML = events.map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const home = comp.competitors?.find(c => c.homeAway === 'home');
+      const away = comp.competitors?.find(c => c.homeAway === 'away');
+      const homeAbbr = home?.team?.abbreviation || '?';
+      const awayAbbr = away?.team?.abbreviation || '?';
+      const homeScore = home?.score != null ? Number(home.score) : null;
+      const awayScore = away?.score != null ? Number(away.score) : null;
+      const isCompleted = comp.status?.type?.completed;
+      const homeWon = isCompleted && homeScore != null && awayScore != null && homeScore > awayScore;
+      const awayWon = isCompleted && homeScore != null && awayScore != null && awayScore > homeScore;
+      const scoreStr = isCompleted && awayScore != null && homeScore != null
+        ? `${awayScore}\u2013${homeScore}` : '\u2014';
+      const homeDisp = homeWon ? `<strong>${homeAbbr}</strong>` : homeAbbr;
+      const awayDisp = awayWon ? `<strong>${awayAbbr}</strong>` : awayAbbr;
+      return `<div class="daily-game" dir="ltr">
+        <div class="daily-game-teams">${awayDisp} @ ${homeDisp}</div>
+        <div class="result-score">${scoreStr}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NBA</div>';
+  }
+}
+
+async function loadYesterdayUCL() {
+  const el = document.getElementById('yesterday-ucl');
+  try {
+    const dateStr = txDateString(-1);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">לא היו משחקי ליגת האלופות אתמול</div>';
+      return;
+    }
+    el.innerHTML = events.map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const home = comp.competitors?.find(c => c.homeAway === 'home');
+      const away = comp.competitors?.find(c => c.homeAway === 'away');
+      const homeName = home?.team?.shortDisplayName || '?';
+      const awayName = away?.team?.shortDisplayName || '?';
+      const homeScore = home?.score != null ? Number(home.score) : null;
+      const awayScore = away?.score != null ? Number(away.score) : null;
+      const isCompleted = comp.status?.type?.completed;
+      const homeWon = isCompleted && homeScore != null && awayScore != null && homeScore > awayScore;
+      const awayWon = isCompleted && homeScore != null && awayScore != null && awayScore > homeScore;
+      const scoreStr = isCompleted && awayScore != null && homeScore != null
+        ? `${awayScore}\u2013${homeScore}` : '\u2014';
+      const homeDisp = homeWon ? `<strong>${homeName}</strong>` : homeName;
+      const awayDisp = awayWon ? `<strong>${awayName}</strong>` : awayName;
+      return `<div class="daily-game" dir="ltr">
+        <div class="daily-game-teams">${awayDisp} @ ${homeDisp}</div>
+        <div class="result-score">${scoreStr}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת ליגת האלופות</div>';
+  }
+}
+
+// Fetch next NFL week games
+async function loadDailyNFL() {
+  const el = document.getElementById('daily-nfl');
+  try {
+    const dateStr = txDateString(0);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      // Try upcoming schedule
+      const res2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
+      const data2 = await res2.json();
+      const ev2 = data2.events || [];
+      if (!ev2.length) {
+        el.innerHTML = '<div class="daily-empty">אין משחקי NFL כעת (עונת הבין-עונות)</div>';
+        return;
+      }
+      const makeNFLRow = ev => {
+        const comp = ev.competitions?.[0] || {};
+        const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+        const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+        const home = homeTeam?.team?.abbreviation || '?';
+        const away = awayTeam?.team?.abbreviation || '?';
+        const time = formatGameDateTime(ev.date);
+        const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+        const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
+        const modalData = {
+          sport: 'nfl', league: 'NFL',
+          home: homeTeam?.team?.displayName || home,
+          away: awayTeam?.team?.displayName || away,
+          date: ev.date, tv: [], detail: note || 'NFL',
+          homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+          completed: !!comp.status?.type?.completed
+        };
+        const encoded = encodeURIComponent(JSON.stringify(modalData));
+        return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+          <div class="daily-game-teams">${away} @ ${home}</div>
+          <div class="daily-game-time">${status}</div>
+        </div>`;
+      };
+      el.innerHTML = ev2.slice(0, 6).map(makeNFLRow).join('');
+      return;
+    }
+    const makeNFLRow2 = ev => {
+      const comp = ev.competitions?.[0] || {};
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+      const home = homeTeam?.team?.abbreviation || '?';
+      const away = awayTeam?.team?.abbreviation || '?';
+      const time = formatGameDateTime(ev.date);
+      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+      const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
+      const modalData = {
+        sport: 'nfl', league: 'NFL',
+        home: homeTeam?.team?.displayName || home,
+        away: awayTeam?.team?.displayName || away,
+        date: ev.date, tv: [], detail: note || 'NFL',
+        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+        completed: !!comp.status?.type?.completed
+      };
+      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-time">${status}</div>
+      </div>`;
+    };
+    el.innerHTML = events.slice(0, 6).map(makeNFLRow2).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NFL</div>';
+  }
+}
+
+// ─── Modal logic ─────────────────────────────────────────────────────────
+// ─── Dallas This Week ────────────────────────────────────────────────────
+const DALLAS_TEAMS = [
+  // NBA - Dallas Mavericks (ID 6)
+  { sport: 'basketball', label: '🏀 NBA', color: '#f97316', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/6/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const isHome = home?.team?.id === '6';
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'American Airlines Center';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Dallas, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ישראל',channel:'ספורט 5'},{region:'ארה"ב',channel:'ESPN / ABC / TNT'}],
+          sport:'basketball', league:'NBA', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // MLB - Texas Rangers (ID 13) — HOME games only
+  { sport: 'baseball', label: '⚾ MLB', color: '#a78bfa', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/13/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => {
+          const t = new Date(e.date).getTime();
+          if (t <= now || t >= week) return false;
+          // Only home games
+          const comp = e.competitions?.[0]||{};
+          const rangers = comp.competitors?.find(c => c.team?.id === '13');
+          return rangers?.homeAway === 'home';
+        });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'Globe Life Field';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Arlington, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'ESPN / Apple TV+'}],
+          sport:'baseball', league:'MLB', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // NFL - Dallas Cowboys (ID 6) — off-season shows upcoming events
+  { sport: 'nfl', label: '🏈 NFL', color: '#ef4444', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/6/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'AT&T Stadium';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Arlington, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'CBS / FOX / NBC / ESPN'}],
+          sport:'nfl', league:'NFL', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // MLS - FC Dallas — scoreboard במקום schedule (schedule מחזיר 500)
+  { sport: 'football', label: '⚽ MLS', color: '#60a5fa', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${txDateString(0)}`)
+      .then(r => r.ok ? r.json() : {events:[]})
+      .catch(() => ({events:[]}))
+      .then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => {
+          const comp = e.competitions?.[0]||{};
+          const hasDallas = comp.competitors?.some(c => c.team?.id === '14879');
+          const t = new Date(e.date).getTime();
+          return hasDallas && t > now && t < week;
+        });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'Toyota Stadium';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Frisco, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'Apple TV+ / MLS Season Pass'}],
+          sport:'football', league:'MLS', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+];
+
+async function loadDallasWeek() {
+  const grid = document.getElementById('dallas-grid');
+  const now = new Date();
+  const txNow = nowInTX();
+  const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  const weekEnd = new Date(txNow);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  document.getElementById('dallas-week-label').textContent =
+    `${txNow.getDate()} ב${months[txNow.getMonth()]} — ${weekEnd.getDate()} ב${months[weekEnd.getMonth()]} · אירועי ספורט בדאלאס`;
+
+  const results = await Promise.allSettled(DALLAS_TEAMS.map(t => t.fn()));
+  const allCards = [];
+  results.forEach((res, i) => {
+    if (res.status !== 'fulfilled') return;
+    const team = DALLAS_TEAMS[i];
+    res.value.forEach(ev => allCards.push({ ...ev, label: team.label, color: team.color }));
+  });
+
+  allCards.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (!allCards.length) {
+    grid.innerHTML = '<div class="daily-empty" style="padding:16px">לא נמצאו אירועי ספורט בדאלאס השבוע</div>';
+    return;
+  }
+
+  grid.innerHTML = allCards.map(ev => {
+    const fullDate = (() => {
+      const d = new Date(ev.date);
+      if (isNaN(d)) return '';
+      return d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'short', timeZone: TX_TZ });
+    })();
+    const time = formatTimeHe(ev.date);
+    const modalData = {
+      sport: ev.sport, league: ev.league,
+      home: ev.home, away: ev.away,
+      date: ev.date, tv: ev.tv, detail: ev.league,
+      venue: ev.detail,
+      city: ev.city || null,
+      completed: false
+    };
+    const encoded = encodeURIComponent(JSON.stringify(modalData));
+    return `<div class="dallas-card" onclick='openModal(decodeURIComponent("${encoded}")')
+      style="border-top-color:${ev.color}">
+      <div class="dallas-card-badge" style="color:${ev.color}">${ev.label}</div>
+      <div class="dallas-card-title">${ev.title}</div>
+      <div class="dallas-card-detail">📅 ${fullDate}</div>
+      <div class="dallas-card-detail">🕐 ${time}</div>
+      <div class="dallas-card-detail">🏟️ ${ev.detail}</div>
+      ${ev.city ? `<div class="dallas-card-detail">📍 ${ev.city}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+loadDallasWeek();
+
+const SPORT_COLORS = {
+  football:   '#60a5fa',
+  basketball: '#f97316',
+  nfl:        '#ef4444',
+  baseball:   '#a78bfa',
+  tennis:     '#4ade80',
+  f1:         '#e11d48',
+  hockey:     '#38bdf8',
+  nascar:     '#f59e0b',
+};
+const SPORT_EMOJI = {
+  football:'⚽', basketball:'🏀', nfl:'🏈', baseball:'⚾', tennis:'🎾', f1:'🏎️', hockey:'🏒', nascar:'🏁'
+};
+const SPORT_LABEL = {
+  football:'כדורגל', basketball:'כדורסל', nfl:'NFL', baseball:'בייסבול', tennis:'טניס', f1:'F1', hockey:'הוקי קרח', nascar:'NASCAR'
+};
+
+function openModal(jsonStr) {
+  const d = JSON.parse(jsonStr);
+  const color = SPORT_COLORS[d.sport] || '#8a8fa8';
+
+  document.getElementById('modal-bar').style.background = color;
+  document.getElementById('modal-badge').style.color = color;
+  document.getElementById('modal-badge').textContent =
+    `${SPORT_EMOJI[d.sport] || '🏅'} ${SPORT_LABEL[d.sport] || d.sport}`;
+
+  // Teams / score
+  let teamsHtml = `${d.away} <span style="color:#8a8fa8;font-weight:400">נגד</span> ${d.home}`;
+  if (d.completed && d.awayScore != null && d.homeScore != null) {
+    teamsHtml += `<div style="font-size:1.4rem;margin-top:6px;color:#fff">${d.awayScore} – ${d.homeScore}</div>`;
+  }
+  document.getElementById('modal-teams').innerHTML = teamsHtml;
+
+  // Countdown
+  const countdown = (() => {
+    if (d.completed) return '';
+    const dt = new Date(d.date);
+    if (isNaN(dt)) return '';
+    const diffMs = dt - Date.now();
+    if (diffMs < 0) return 'כבר התחיל';
+    const days = Math.floor(diffMs / 86400000);
+    const hours = Math.floor((diffMs % 86400000) / 3600000);
+    const mins  = Math.floor((diffMs % 3600000) / 60000);
+    if (days > 0) return `בעוד ${days} ימים`;
+    if (hours > 0) return `בעוד ${hours} שעות`;
+    if (mins  > 0) return `בעוד ${mins} דקות`;
+    return 'עכשיו!';
+  })();
+
+  // TV rows
+  const tvRows = (d.tv || []).map(t =>
+    `<div class="modal-row"><span class="icon">📺</span><strong>${t.region}:</strong>&nbsp;${t.channel}</div>`
+  ).join('');
+
+  // Google Calendar URL — built inline to avoid dependency issues
+  let calURL = null;
+  if (!d.completed && d.date) {
+    const start = new Date(d.date);
+    if (!isNaN(start)) {
+      const end = new Date(start.getTime() + 2 * 3600 * 1000);
+      const fmt = dt => dt.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+      const detail = [d.detail, ...(d.tv||[]).map(t=>`📺 ${t.region}: ${t.channel}`)].filter(Boolean).join('\n');
+      calURL = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+        + '&text=' + encodeURIComponent(`${d.away} נגד ${d.home}`)
+        + '&dates=' + fmt(start) + '/' + fmt(end)
+        + '&details=' + encodeURIComponent(detail)
+        + '&crm=POPUP&crmMin=15';
+    }
+  }
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-row"><span class="icon">🏆</span>&nbsp;${d.detail || d.league}</div>
+    ${d.series ? `<div class="modal-row"><span class="icon">📊</span>&nbsp;<strong style="color:#facc15">${d.series}</strong></div>` : ''}
+    ${d.venue ? `<div class="modal-row"><span class="icon">🏟️</span>&nbsp;${d.venue}</div>` : ''}
+    ${d.city  ? `<div class="modal-row"><span class="icon">📍</span>&nbsp;${d.city}</div>`  : ''}
+    <div class="modal-row"><span class="icon">📅</span>&nbsp;${formatDateTX(d.date)}</div>
+    ${tvRows}
+    ${countdown ? `<div style="margin-top:12px"><span class="modal-countdown">${countdown}</span></div>` : ''}
+    ${calURL   ? `<div style="margin-top:12px"><a href="${calURL}" target="_blank" class="modal-cal-btn">📆 הוסף ל-Google Calendar</a></div>` : ''}
+  `;
+
+  document.getElementById('game-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e, force) {
+  if (force || (e && e.target === document.getElementById('game-modal'))) {
+    document.getElementById('game-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(null, true); });
+
+// ─── Page Navigation ─────────────────────────────
+function showPage(page) {
+  document.getElementById('main-page').classList.toggle('hidden', page !== 'main');
+  document.getElementById('region-page').classList.toggle('visible', page === 'region');
+  document.getElementById('month-page').classList.toggle('visible', page === 'month');
+  document.getElementById('btn-main').classList.toggle('active', page === 'main');
+  document.getElementById('btn-region').classList.toggle('active', page === 'region');
+  document.getElementById('btn-month').classList.toggle('active', page === 'month');
+  if (page === 'region' && !window._regionBuilt) { renderRegionTeams(); window._regionBuilt = true; }
+  if (page === 'month'  && !window._monthBuilt)  { renderMonthGames();  window._monthBuilt = true; }
+}
+
+// ─── משחקים באזור — כל קבוצות/ליגות הספורט בדאלאס-פורט וורת' (DFW) ────────
+// tier: major (ליגה ראשית) | minor (ליגה משנית/פיתוח) | college (קולג') | motorsport (מוטורי/גולף)
+const REGION_TEAMS = [
+  // ── ליגות ראשיות ──
+  { tier:'major', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Cowboys', league:'NFL', venue:'AT&T Stadium', city:'ארלינגטון, טקסס', url:'https://www.dallascowboys.com/' },
+  { tier:'major', emoji:'🏀', sport:'כדורסל', name:'Dallas Mavericks', league:'NBA', venue:'American Airlines Center', city:'דאלאס, טקסס', url:'https://www.mavs.com/' },
+  { tier:'major', emoji:'⚾', sport:'בייסבול', name:'Texas Rangers', league:'MLB', venue:'Globe Life Field', city:'ארלינגטון, טקסס', url:'https://www.mlb.com/rangers' },
+  { tier:'major', emoji:'🏒', sport:'הוקי קרח', name:'Dallas Stars', league:'NHL', venue:'American Airlines Center', city:'דאלאס, טקסס', url:'https://www.nhl.com/stars/' },
+  { tier:'major', emoji:'⚽', sport:'כדורגל', name:'FC Dallas', league:'MLS', venue:'Toyota Stadium', city:'פריסקו, טקסס', url:'https://www.fcdallas.com/' },
+  { tier:'major', emoji:'🏀', sport:'כדורסל נשים', name:'Dallas Wings', league:'WNBA', venue:'College Park Center', city:'ארלינגטון, טקסס', url:'https://wings.wnba.com/' },
+  { tier:'major', emoji:'⚽', sport:'כדורגל נשים', name:'Dallas Trinity FC', league:'USL Super League', venue:'Cotton Bowl', city:'דאלאס, טקסס', url:'https://www.dallastrinityfc.com/' },
+
+  // ── ליגות משניות ופיתוח ──
+  { tier:'minor', emoji:'⚾', sport:'בייסבול', name:'Frisco RoughRiders', league:"Minor League Baseball · Double-A (שיוך ל-Texas Rangers)", venue:'Riders Field', city:'פריסקו, טקסס', url:'https://www.milb.com/frisco' },
+  { tier:'minor', emoji:'🏀', sport:'כדורסל', name:'Texas Legends', league:'NBA G League (שיוך ל-Dallas Mavericks)', venue:'Comerica Center', city:'פריסקו, טקסס', url:'https://www.texaslegends.com/' },
+  { tier:'minor', emoji:'⚽', sport:'כדורגל', name:'North Texas SC', league:'MLS Next Pro (קבוצת פיתוח של FC Dallas)', venue:'Toyota Stadium', city:'פריסקו, טקסס', url:'https://www.fcdallas.com/northtexassc' },
+  { tier:'minor', emoji:'⚽', sport:'כדורגל אולם', name:'Dallas Sidekicks', league:'MASL', venue:'Credit Union of Texas Event Center', city:'אלן, טקסס', url:'https://www.dallassidekicks.net/' },
+  { tier:'minor', emoji:'⚽', sport:'כדורגל', name:'Fort Worth Vaqueros', league:'NPSL', venue:'W.O. Barnes Stadium', city:'פורט וורת\', טקסס', url:'https://www.fwvaqueros.com/' },
+  { tier:'minor', emoji:'🏉', sport:'רוגבי', name:'Dallas Jackals', league:'Major League Rugby', venue:'Choctaw Stadium', city:'ארלינגטון, טקסס', url:'https://www.dallasjackals.com/' },
+  { tier:'minor', emoji:'🥍', sport:'לקרוס', name:'Panther City Lacrosse Club', league:'NLL', venue:'Dickies Arena', city:'פורט וורת\', טקסס', url:'https://www.panthercitylacrosse.com/' },
+  { tier:'minor', emoji:'🤠', sport:'רכיבת פרים', name:'Ariat Texas Rattlers', league:'PBR Team Series', venue:'Dickies Arena', city:'פורט וורת\', טקסס', url:'https://pbrteamseries.com/' },
+  { tier:'minor', emoji:'🏒', sport:'הוקי קרח', name:'Allen Americans', league:'ECHL', venue:'Credit Union of Texas Event Center', city:'אלן, טקסס', url:'https://www.allenamericans.com/' },
+  { tier:'minor', emoji:'🏒', sport:'הוקי קרח נוער', name:'Lone Star Brahmas', league:'NAHL', venue:'NYTEX Sports Centre', city:'נורת\' ריצ\'לנד הילס, טקסס', url:'https://www.brahmashockey.com/' },
+  { tier:'minor', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Renegades', league:'UFL', venue:'Choctaw Stadium', city:'ארלינגטון, טקסס', url:'https://www.theufl.com/' },
+  { tier:'minor', emoji:'🎮', sport:'ספורט אלקטרוני', name:'Dallas Fuel', league:"Overwatch Champions Series", venue:'אירועים / שידור מקוון', city:'דאלאס, טקסס', url:'https://www.dallasfuel.com/' },
+  { tier:'minor', emoji:'🥏', sport:'פריזבי אולטימייט', name:'Dallas Roughnecks', league:'AUDL', venue:'Choctaw Stadium', city:'ארלינגטון, טקסס', url:'https://www.roughnecksultimate.com/' },
+
+  // ── ספורט קולג' ──
+  { tier:'college', emoji:'🎓', sport:'פוטבול / כדורסל קולג\'', name:'SMU Mustangs', league:'NCAA · ACC', venue:'Gerald J. Ford Stadium', city:'יוניברסיטי פארק (דאלאס), טקסס', url:'https://smumustangs.com/' },
+  { tier:'college', emoji:'🎓', sport:'פוטבול / כדורסל קולג\'', name:'TCU Horned Frogs', league:'NCAA · Big 12', venue:'Amon G. Carter Stadium', city:'פורט וורת\', טקסס', url:'https://gofrogs.com/' },
+  { tier:'college', emoji:'🎓', sport:'פוטבול / כדורסל קולג\'', name:'North Texas Mean Green', league:'NCAA · American Conference', venue:'DATCU Stadium', city:'דנטון, טקסס', url:'https://meangreensports.com/' },
+
+  // ── ספורט מוטורי וגולף ──
+  { tier:'motorsport', emoji:'🏁', sport:'ספורט מוטורי', name:'Texas Motor Speedway', league:'NASCAR Cup / Xfinity / Truck Series — מרוצים שנתיים', venue:'Texas Motor Speedway', city:'פורט וורת\', טקסס', url:'https://www.texasmotorspeedway.com/' },
+  { tier:'motorsport', emoji:'⛳', sport:'גולף', name:"THE CJ CUP Byron Nelson", league:'PGA Tour — מאי 2026', venue:'TPC Craig Ranch', city:'מקינני, טקסס', url:'https://thecjcupbyronnelson.org/' },
+];
+
+const REGION_TIER_LABEL = {
+  major: 'ליגות ראשיות', minor: 'ליגות משניות ופיתוח',
+  college: "ספורט קולג'", motorsport: 'ספורט מוטורי וגולף',
+};
+
+let _regionFilter = 'all', _regionSearch = '';
+
+function regionFilter(type, btn) {
+  _regionFilter = type;
+  document.querySelectorAll('.region-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderRegionTeams();
+}
+
+function regionSearch(val) {
+  _regionSearch = val.toLowerCase();
+  renderRegionTeams();
+}
+
+function renderRegionTeams() {
+  const container = document.getElementById('region-container');
+  let filtered = REGION_TEAMS.filter(t => _regionFilter === 'all' || t.tier === _regionFilter);
+  if (_regionSearch) {
+    filtered = filtered.filter(t =>
+      t.name.toLowerCase().includes(_regionSearch) ||
+      t.league.toLowerCase().includes(_regionSearch) ||
+      t.sport.toLowerCase().includes(_regionSearch) ||
+      t.city.toLowerCase().includes(_regionSearch)
+    );
+  }
+  const tiers = ['major', 'minor', 'college', 'motorsport'];
+  let html = '';
+  tiers.forEach(tier => {
+    const items = filtered.filter(t => t.tier === tier);
+    if (!items.length) return;
+    html += `<div class="region-section-header">${REGION_TIER_LABEL[tier]} <span style="font-size:0.75rem;color:#8a8fa8;font-weight:400">(${items.length})</span></div><div class="region-grid">`;
+    items.forEach(t => {
+      html += `<a class="region-card tier-${tier}" href="${t.url}" target="_blank" rel="noopener">
+        <div class="region-card-top">
+          <div class="region-card-sport">${t.emoji} ${t.sport}</div>
+          <div class="region-card-tier">${REGION_TIER_LABEL[tier]}</div>
+        </div>
+        <div class="region-card-name">${t.name}</div>
+        <div class="region-card-detail">🏆 ${t.league}</div>
+        <div class="region-card-detail">🏟️ ${t.venue}</div>
+        <div class="region-card-detail">📍 ${t.city}</div>
+        <div class="region-card-link">🔗 אתר רשמי</div>
+      </a>`;
+    });
+    html += '</div>';
+  });
+  if (!html) html = '<div style="text-align:center;color:#8a8fa8;padding:40px">לא נמצאו תוצאות</div>';
+  container.innerHTML = html;
+}
+
+// ─── משחקים בדאלאס בחודש הקרוב (15/08–15/09/2026) ─────────────────────────
+// נתונים סטטיים שנאספו מלוחות הזמנים הרשמיים שפורסמו לכל קבוצה. ליגות ללא
+// משחקי בית בטווח הזה (עונה סגורה/טרם התחילה) לא כלולות במערך.
+// firstDate משמש למיון הכרטיסיות לפי סדר כרונולוגי בתוך כל דרגה.
+const MONTH_GAMES = [
+  { tier:'major', emoji:'⚾', sport:'בייסבול', name:'Texas Rangers', league:'MLB', venue:'Globe Life Field', city:'ארלינגטון, טקסס', firstDate:'2026-09-15',
+    games:[
+      { date:'15–17 בספטמבר', opp:'נגד Boston Red Sox' },
+      { date:'18–19 בספטמבר', opp:'נגד Toronto Blue Jays (סבב הבית האחרון של העונה)' },
+    ],
+    note:'העונה הסדירה מסתיימת ב-27/09 במשחקי חוץ — אין עוד משחקי בית מתוכננים בטווח הזה. הקבוצה מאחורי בתחרות ה-Wild Card נכון לתחילת ספטמבר; אם תעפיל לפלייאוף, לוח הבית לא פורסם עדיין.' },
+  { tier:'major', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Cowboys', league:'NFL', venue:'AT&T Stadium', city:'ארלינגטון, טקסס', firstDate:'2026-09-20',
+    games:[
+      { date:'20 בספטמבר', opp:'נגד Washington Commanders' },
+      { date:'8 באוקטובר', opp:'נגד Tampa Bay Buccaneers (חמישי, ערוץ Amazon Prime)' },
+    ] },
+  { tier:'major', emoji:'⚽', sport:'כדורגל', name:'FC Dallas', league:'MLS', venue:'Toyota Stadium', city:'פריסקו, טקסס', firstDate:'2026-09-26',
+    games:[
+      { date:'26 בספטמבר', opp:'נגד LAFC' },
+      { date:'14 באוקטובר', opp:'נגד Seattle Sounders FC' },
+    ] },
+  { tier:'major', emoji:'🏒', sport:'הוקי קרח', name:'Dallas Stars', league:'NHL', venue:'American Airlines Center', city:'דאלאס, טקסס', firstDate:'2026-09-21',
+    games:[
+      { date:'21 בספטמבר', opp:'נגד St. Louis Blues (פרה-סיזון)' },
+      { date:'23 בספטמבר', opp:'נגד Minnesota Wild (פרה-סיזון)' },
+      { date:'2 באוקטובר', opp:'נגד St. Louis Blues (פתיחת העונה הסדירה בבית!)' },
+    ] },
+  { tier:'major', emoji:'🏀', sport:'כדורסל', name:'Dallas Mavericks', league:'NBA', venue:'American Airlines Center', city:'דאלאס, טקסס', firstDate:'2026-10-14',
+    games:[
+      { date:'14 באוקטובר', opp:'נגד New Orleans Pelicans (פרה-סיזון — המשחק היחיד באצטדיון בטווח הזה)' },
+    ],
+    note:'פתיחת העונה הסדירה היא ב-21/10 מול יוסטון — משחק חוץ, מחוץ לטווח הזה.' },
+
+  // ── ליגות משניות: לא נמצאו משחקי בית מתוכננים בטווח הזה (ראו הערה למטה) ──
+
+  // ── קולג' ──
+  { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'TCU Horned Frogs', league:'NCAA · Big 12', venue:'Amon G. Carter Stadium', city:"פורט וורת', טקסס", firstDate:'2026-09-19',
+    games:[
+      { date:'19 בספטמבר', opp:'נגד Arkansas State (Family Weekend)' },
+      { date:'3 באוקטובר', opp:'נגד BYU (Block T Hall of Fame Weekend)' },
+    ] },
+  { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'SMU Mustangs', league:'NCAA · ACC', venue:'Gerald J. Ford Stadium', city:'דאלאס, טקסס', firstDate:'2026-09-26',
+    games:[ { date:'26 בספטמבר', opp:'נגד Missouri State (Family Weekend)' } ] },
+  { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'North Texas Mean Green', league:'NCAA · American Conference', venue:'DATCU Stadium', city:'דנטון, טקסס', firstDate:'2026-09-26',
+    games:[ { date:'26 בספטמבר', opp:'נגד Houston Christian (Family Weekend / Senior Day)' } ] },
+
+  // ── פורמולה 1 — לא משחקי בית בדאלאס, אלא מרוצים משודרים שחלים בטווח הזה (ראו בקשה מפורשת) ──
+  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של אזרבייג\'ן', league:'Formula 1', venue:'Baku City Circuit', city:'באקו, אזרבייג\'ן', firstDate:'2026-09-26',
+    games:[ { date:'26 בספטמבר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
+  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של בחריין (במלזיה)', league:'Formula 1', venue:'Sepang International Circuit', city:'ספאנג, מלזיה', firstDate:'2026-10-04',
+    games:[ { date:'4 באוקטובר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ],
+    note:'שם מוזר בכוונה: זהו מרוץ ה-Bahrain GP הרשמי, שהועבר לזמניית ל-2026 למעגל Sepang במלזיה, תוך שמירה על שם וחסות בחריין.' },
+  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של סינגפור', league:'Formula 1', venue:'Marina Bay Street Circuit', city:'סינגפור', firstDate:'2026-10-11',
+    games:[ { date:'11 באוקטובר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
+];
+
+const MONTH_TIER_LABEL = {
+  major: 'ליגות ראשיות', minor: 'ליגות משניות', college: "ספורט קולג'", motorsport: 'פורמולה 1 (משודר)',
+};
+
+let _monthFilter = 'all', _monthSearch = '';
+
+function monthFilter(type, btn) {
+  _monthFilter = type;
+  document.querySelectorAll('.month-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderMonthGames();
+}
+
+function monthSearch(val) {
+  _monthSearch = val.toLowerCase();
+  renderMonthGames();
+}
+
+function renderMonthGames() {
+  const container = document.getElementById('month-container');
+  let filtered = MONTH_GAMES.filter(t => _monthFilter === 'all' || t.tier === _monthFilter);
+  if (_monthSearch) {
+    filtered = filtered.filter(t =>
+      t.name.toLowerCase().includes(_monthSearch) ||
+      t.league.toLowerCase().includes(_monthSearch) ||
+      t.sport.toLowerCase().includes(_monthSearch) ||
+      t.games.some(g => g.opp.toLowerCase().includes(_monthSearch) || g.date.toLowerCase().includes(_monthSearch))
+    );
+  }
+  const tiers = ['major', 'minor', 'college', 'motorsport'];
+  let html = '';
+  tiers.forEach(tier => {
+    const items = filtered.filter(t => t.tier === tier).sort((a, b) => a.firstDate.localeCompare(b.firstDate));
+    if (!items.length) return;
+    html += `<div class="month-section-header">${MONTH_TIER_LABEL[tier]} <span style="font-size:0.75rem;color:#8a8fa8;font-weight:400">(${items.length})</span></div><div class="month-grid">`;
+    items.forEach(t => {
+      const gamesHtml = t.games.map(g =>
+        `<div class="month-game-row"><span class="month-game-date">📅 <span dir="ltr">${g.date}</span></span><span class="month-game-opp">${g.opp}</span></div>`
+      ).join('');
+      html += `<div class="month-card tier-${tier}">
+        <div class="month-card-top">
+          <div class="month-card-sport">${t.emoji} ${t.sport}</div>
+          <div class="month-card-tier">${MONTH_TIER_LABEL[tier]}</div>
+        </div>
+        <div class="month-card-name">${t.name}</div>
+        <div class="month-card-league">🏆 ${t.league}</div>
+        <div class="month-card-venue">🏟️ ${t.venue} &bull; 📍 ${t.city}</div>
+        <div class="month-card-games">${gamesHtml}</div>
+        ${t.note ? `<div class="month-card-note">ℹ️ ${t.note}</div>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  if (!html) html = '<div style="text-align:center;color:#8a8fa8;padding:40px">לא נמצאו תוצאות</div>';
+  container.innerHTML = html;
+}
+
+// ─── NASCAR Cup Series ─────────────────────────────
+// ─── Helper לכל סדרות המרוץ ─────────────────────────────
+function makeRaceWidget(elId, schedule, sport, league, color) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const now = Date.now();
+  const next = schedule.find(r => new Date(r.date).getTime() > now - 3600000 * 6);
+  if (!next) { el.innerHTML = '<div class="daily-empty">סיים עונה</div>'; return; }
+  const raceDate = new Date(next.date);
+  const isPast = raceDate.getTime() < now;
+  const fullDate = raceDate.toLocaleDateString('he-IL', { weekday:'short', day:'numeric', month:'short', timeZone: TX_TZ });
+  const timeStr = formatTimeHe(next.date);
+  const diffMs = raceDate.getTime() - now;
+  const days  = Math.floor(diffMs / 86400000);
+  const hours = Math.floor((diffMs % 86400000) / 3600000);
+  const mins  = Math.floor((diffMs % 3600000) / 60000);
+  const countdown = isPast ? null
+    : days  > 0 ? `בעוד ${days} ימים`
+    : hours > 0 ? `בעוד ${hours} שעות`
+    : mins  > 0 ? `בעוד ${mins} דקות`
+    : 'עכשיו!';
+  const statusLine = isPast
+    ? `<div class="daily-game-time" style="color:#4ade80">✅ הסתיים</div>`
+    : `<div class="daily-game-time" style="color:${color};font-weight:700">⏱️ ${countdown}</div>`;
+  const modalData = {
+    sport, league, home: next.name, away: '',
+    date: next.date,
+    tv: [{ region: 'ארה"ב', channel: next.tv }],
+    detail: league, venue: next.track, city: next.city,
+    completed: isPast
+  };
+  const encoded = encodeURIComponent(JSON.stringify(modalData));
+  el.innerHTML = `
+    <div class="daily-game clickable" style="flex-direction:column;align-items:flex-start;gap:5px"
+         onclick='openModal(decodeURIComponent("${encoded}"))'>
+      <div class="daily-game-teams">${next.name}</div>
+      ${next.track ? `<div class="daily-game-time">🏟️ ${next.track}</div>` : ''}
+      <div class="daily-game-time">📍 ${next.city}</div>
+      <div class="daily-game-time">📅 ${fullDate} ${timeStr}</div>
+      <div class="daily-game-time">📺 ${next.tv}</div>
+      ${statusLine}
+    </div>`;
+}
+
+// ─── NASCAR O'Reilly (Xfinity) ─────────────────────────────
+const XFINITY_2026 = [
+  { name: 'Kansas Lottery 300', track: 'Kansas Speedway', city: 'Kansas City, KS', date: '2026-05-16T20:00:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Charlotte", track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-05-23T22:00:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Nashville", track: 'Nashville Superspeedway', city: 'Lebanon, TN', date: '2026-05-30T23:30:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Sonoma", track: 'Sonoma Raceway', city: 'Sonoma, CA', date: '2026-06-27T21:00:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Chicagoland", track: 'Chicagoland Speedway', city: 'Joliet, IL', date: '2026-07-04T21:00:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at North Wilkesboro", track: 'North Wilkesboro Speedway', city: 'North Wilkesboro, NC', date: '2026-07-18T21:00:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Indianapolis", track: 'Indianapolis Motor Speedway', city: 'Indianapolis, IN', date: '2026-07-25T20:00:00Z', tv: 'The CW' },
+];
+
+// ─── NASCAR Craftsman Truck ─────────────────────────────
+const TRUCK_2026 = [
+  { name: 'NASCAR Truck at Dover', track: 'Dover Motor Speedway', city: 'Dover, DE', date: '2026-05-15T21:00:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Charlotte', track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-05-22T23:30:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Nashville', track: 'Nashville Superspeedway', city: 'Lebanon, TN', date: '2026-05-29T00:00:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Michigan', track: 'Michigan International Speedway', city: 'Brooklyn, MI', date: '2026-06-06T17:30:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at San Diego', track: 'Naval Base Coronado', city: 'San Diego, CA', date: '2026-06-19T23:00:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Lime Rock', track: 'Lime Rock Park', city: 'Lakeville, CT', date: '2026-07-11T17:00:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at North Wilkesboro', track: 'North Wilkesboro Speedway', city: 'North Wilkesboro, NC', date: '2026-07-18T16:30:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Indianapolis', track: 'Indianapolis Motor Speedway', city: 'Indianapolis, IN', date: '2026-07-25T20:00:00Z', tv: 'FS1' },
+];
+
+// ─── IndyCar Series ─────────────────────────────
+const INDYCAR_2026 = [
+  { name: 'Indianapolis 500 (110th)', track: 'Indianapolis Motor Speedway', city: 'Indianapolis, IN', date: '2026-05-24T14:00:00Z', tv: 'FOX' },
+  { name: 'Chevrolet Detroit Grand Prix', track: 'Streets of Detroit', city: 'Detroit, MI', date: '2026-05-31T16:30:00Z', tv: 'FOX' },
+  { name: 'World Wide Technology Raceway', track: 'World Wide Technology Raceway', city: 'Madison, IL', date: '2026-06-07T01:00:00Z', tv: 'FOX' },
+  { name: 'Road America Grand Prix', track: 'Road America', city: 'Elkhart Lake, WI', date: '2026-06-21T18:00:00Z', tv: 'FOX' },
+  { name: 'Hy-Vee INDYCAR Weekend', track: 'Iowa Speedway', city: 'Newton, IA', date: '2026-07-05T16:30:00Z', tv: 'FOX' },
+  { name: 'Music City Grand Prix', track: 'Streets of Nashville', city: 'Nashville, TN', date: '2026-07-19T18:00:00Z', tv: 'FOX' },
+  { name: 'Gallagher Grand Prix', track: 'Indianapolis Motor Speedway Road Course', city: 'Indianapolis, IN', date: '2026-08-09T20:00:00Z', tv: 'FOX' },
+  { name: 'Streets of Markham Grand Prix', track: 'Streets of Markham', city: 'Markham, ON', date: '2026-08-16T16:00:00Z', tv: 'FOX' },
+];
+
+// ─── MotoGP World Championship ───────────────────────────
+const MOTOGP_2026 = [
+  { name: "Gran Premio d'Italia", track: 'Autodromo Internazionale del Mugello', city: 'Mugello, Italy', date: '2026-05-31T13:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Hungarian Grand Prix', track: 'Balaton Park Circuit', city: 'Balaton, Hungary', date: '2026-06-07T13:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Czech Grand Prix', track: 'Automotodrom Brno', city: 'Brno, Czech Republic', date: '2026-06-21T13:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Dutch TT Assen', track: 'TT Circuit Assen', city: 'Assen, Netherlands', date: '2026-06-28T13:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'German Grand Prix', track: 'Sachsenring', city: 'Hohenstein-Ernstthal, Germany', date: '2026-07-12T13:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'British Grand Prix', track: 'Silverstone Circuit', city: 'Silverstone, UK', date: '2026-08-09T13:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Aragon Grand Prix', track: 'MotorLand Aragon', city: 'Alcaniz, Spain', date: '2026-08-30T13:00:00Z', tv: 'MotoGP VideoPass' },
+];
+
+function loadDailyNASCARXfinity() { makeRaceWidget('daily-nascar-xfinity', XFINITY_2026, 'nascar-xfinity', "NASCAR O'Reilly Series", '#22d3ee'); }
+function loadDailyNASCARTruck()   { makeRaceWidget('daily-nascar-truck',   TRUCK_2026,   'nascar-truck',   'NASCAR Truck Series',   '#84cc16'); }
+function loadDailyIndyCar()       { makeRaceWidget('daily-indycar',        INDYCAR_2026, 'indycar',        'IndyCar Series',        '#c084fc'); }
+function loadDailyMotoGP()        { makeRaceWidget('daily-motogp',         MOTOGP_2026,  'motogp',         'MotoGP World Championship', '#f43f5e'); }
+
+// עדכון פרטי ספורט לסדרות החדשות
+SPORT_COLORS['nascar-xfinity'] = '#22d3ee';
+SPORT_COLORS['nascar-truck']   = '#84cc16';
+SPORT_COLORS['indycar']        = '#c084fc';
+SPORT_COLORS['motogp']         = '#f43f5e';
+SPORT_EMOJI['nascar-xfinity']  = '🏎️';
+SPORT_EMOJI['nascar-truck']    = '🚚';
+SPORT_EMOJI['indycar']         = '🏎️';
+SPORT_EMOJI['motogp']          = '🏁';
+SPORT_LABEL['nascar-xfinity']  = "NASCAR O'Reilly";
+SPORT_LABEL['nascar-truck']    = 'NASCAR Truck';
+SPORT_LABEL['indycar']         = 'IndyCar';
+SPORT_LABEL['motogp']          = 'MotoGP';
+
+// קריאה לסדרות המרוץ החדשות
+loadDailyNASCARXfinity();
+loadDailyNASCARTruck();
+loadDailyIndyCar();
+loadDailyMotoGP();
+async function loadDailyNASCAR() {
+  const el = document.getElementById('daily-nascar');
+
+  // לוח המרוצים סטטי לעונת 2026 (מיושר לפי NASCAR.com ו-FOX Sports)
+  const NASCAR_2026 = [
+    { name: 'NASCAR All-Star Race', track: 'Dover Motor Speedway', city: 'Dover, DE', date: '2026-05-17T17:00:00Z', tv: 'FS1' },
+    { name: 'Coca-Cola 600', track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-05-24T22:00:00Z', tv: 'Prime Video' },
+    { name: 'NASCAR Cup Series at Nashville', track: 'Nashville Superspeedway', city: 'Lebanon, TN', date: '2026-05-31T23:30:00Z', tv: 'Prime Video' },
+    { name: 'NASCAR Cup Series at San Diego', track: 'Naval Base Coronado', city: 'San Diego, CA', date: '2026-06-21T21:00:00Z', tv: 'Prime Video' },
+    { name: 'NASCAR Cup Series at Sonoma', track: 'Sonoma Raceway', city: 'Sonoma, CA', date: '2026-06-28T21:30:00Z', tv: 'Prime Video' },
+    { name: 'Quaker State 400 at Chicagoland', track: 'Chicagoland Speedway', city: 'Joliet, IL', date: '2026-07-05T21:30:00Z', tv: 'Prime Video' },
+    { name: 'NASCAR Cup Series at North Wilkesboro', track: 'North Wilkesboro Speedway', city: 'North Wilkesboro, NC', date: '2026-07-19T21:00:00Z', tv: 'TNT Sports' },
+    { name: 'NASCAR Cup Series at Indianapolis', track: 'Indianapolis Motor Speedway', city: 'Indianapolis, IN', date: '2026-07-26T20:00:00Z', tv: 'TNT Sports' },
+    { name: 'NASCAR Cup Series at Iowa', track: 'Iowa Speedway', city: 'Newton, IA', date: '2026-08-09T21:00:00Z', tv: 'TNT Sports' },
+    { name: 'NASCAR Cup Series at New Hampshire', track: 'New Hampshire Motor Speedway', city: 'Loudon, NH', date: '2026-08-23T19:30:00Z', tv: 'TNT Sports' },
+    { name: 'Daytona Night Race', track: 'Daytona International Speedway', city: 'Daytona Beach, FL', date: '2026-08-29T23:30:00Z', tv: 'USA Network' },
+  ];
+
+  try {
+    const now = Date.now();
+
+    // מצא את המירוץ הבא מהליסט הסטטי
+    const next = NASCAR_2026.find(r => new Date(r.date).getTime() > now - 3600000 * 6);
+
+    if (!next) {
+      el.innerHTML = '<div class="daily-empty">סיים לוח המרוצים לעונת 2026</div>';
+      return;
+    }
+
+    const raceDate = new Date(next.date);
+    const isPast = raceDate.getTime() < now;
+    const isToday = !isPast && (raceDate.getTime() - now) < 86400000;
+
+    const fullDate = raceDate.toLocaleDateString('he-IL', {
+      weekday: 'short', day: 'numeric', month: 'short', timeZone: TX_TZ
+    });
+    const timeStr = formatTimeHe(next.date);
+
+    let statusLine = '';
+    if (isPast) {
+      statusLine = `<div class="daily-game-time" style="color:#4ade80">✅ הסתיים</div>`;
+    } else {
+      const diffMs = raceDate.getTime() - now;
+      const days = Math.floor(diffMs / 86400000);
+      const hours = Math.floor((diffMs % 86400000) / 3600000);
+      const mins  = Math.floor((diffMs % 3600000) / 60000);
+      let countdown;
+      if (days > 0) countdown = `בעוד ${days} ימים`;
+      else if (hours > 0) countdown = `בעוד ${hours} שעות`;
+      else if (mins > 0) countdown = `בעוד ${mins} דקות`;
+      else countdown = 'עכשיו!';
+      statusLine = `<div class="daily-game-time" style="color:#f59e0b;font-weight:700">⏱️ ${countdown}</div>`;
+    }
+
+    const modalData = {
+      sport: 'nascar', league: 'NASCAR Cup Series',
+      home: next.name, away: '',
+      date: next.date,
+      tv: [{ region: 'ארה"ב', channel: next.tv }],
+      detail: 'NASCAR Cup Series',
+      venue: next.track, city: next.city,
+      completed: isPast
+    };
+    const encoded = encodeURIComponent(JSON.stringify(modalData));
+
+    el.innerHTML = `
+      <div class="daily-game clickable" style="flex-direction:column;align-items:flex-start;gap:5px"
+           onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${next.name}</div>
+        <div class="daily-game-time">🏟️ ${next.track}</div>
+        <div class="daily-game-time">📍 ${next.city}</div>
+        <div class="daily-game-time">📅 ${fullDate} ${timeStr}</div>
+        <div class="daily-game-time">📺 ${next.tv}</div>
+        ${statusLine}
+      </div>`;
+
+  } catch(e) {
+    el.innerHTML = `<div class="daily-empty">שגיאה: ${e.message}</div>`;
+  }
+}
+
+// Fetch next F1 race
+async function loadDailyF1() {
+  const el = document.getElementById('daily-f1');
+  try {
+    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard');
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const now = Date.now();
+    // Find next event
+    const events = (data.events || []).filter(e => new Date(e.date).getTime() > now - 86400000)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">אין מירוץ F1 קרוב</div>';
+      return;
+    }
+    const ev = events[0];
+    const comp = ev.competitions?.[0] || {};
+    const raceName = ev.name || ev.shortName || 'Grand Prix';
+    const circuit = comp.venue?.fullName || comp.venue?.shortName || '';
+    const dateStr = formatTimeHe(ev.date);
+    const fullDate = (() => {
+      const d = new Date(ev.date);
+      if (isNaN(d)) return '';
+      return d.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short', timeZone: TX_TZ });
+    })();
+    const status = comp.status?.type?.completed ? '(סיום)'
+      : comp.status?.type?.inProgress ? '🔴 חי'
+      : `${fullDate} ${dateStr}`;
+    el.innerHTML = `<div class="daily-game" style="flex-direction:column;align-items:flex-start;gap:4px;">
+      <div class="daily-game-teams">${raceName}</div>
+      ${circuit ? `<div class="daily-game-time">📍 ${circuit}</div>` : ''}
+      <div class="daily-game-time">⏰ ${status}</div>
+    </div>`;
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת F1</div>';
+  }
+}
+</script>
+
+<script>
+  // רישום Service Worker לצורך התקנה כאפליקציה (PWA). לא משפיע על שליפת
+  // נתוני הספורט החיים - אלה תמיד נטענים ישירות מהרשת.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
