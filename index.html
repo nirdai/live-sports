@@ -627,6 +627,8 @@
     .daily-section.nascar-truck   .daily-section-title { color: #84cc16; }
     .daily-section.indycar        .daily-section-title { color: #c084fc; }
     .daily-section.motogp         .daily-section-title { color: #f43f5e; }
+    .daily-section.ncaaf          .daily-section-title,
+    .daily-section.ncaab          .daily-section-title { color: #a855f7; }
     .daily-section.yesterday-nba { border-top-color: #f97316; }
     .daily-section.yesterday-ucl { border-top-color: #60a5fa; }
     .daily-section.yesterday-nba .daily-section-title { color: #f97316; }
@@ -960,6 +962,14 @@
     <div class="daily-section motogp">
       <div class="daily-section-title">🏁 MotoGP — הבא</div>
       <div id="daily-motogp"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section ncaaf">
+      <div class="daily-section-title">🏈 פוטבול מכללות — הבא</div>
+      <div id="daily-ncaaf"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section ncaab">
+      <div class="daily-section-title">🏀 כדורסל מכללות — היום</div>
+      <div id="daily-ncaab"><div class="daily-loading">טוען...</div></div>
     </div>
   </div>
 </div>
@@ -1579,6 +1589,8 @@ loadDailyF1();
 loadDailyNHL();
 loadDailyMLB();
 loadDailyNASCAR();
+loadDailyNCAAF();
+loadDailyNCAAB();
 loadYesterdayNBA();
 loadYesterdayUCL();
 
@@ -1908,6 +1920,121 @@ const DALLAS_TEAMS = [
         return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
           tv: [{region:'ארה"ב',channel:'Apple TV+ / MLS Season Pass'}],
           sport:'football', league:'MLS', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // ─── קולג' (NCAA) — פוטבול וכדורסל, SMU/TCU/North Texas ────────────────
+  // פוטבול - SMU Mustangs (ESPN team id 2567)
+  { sport: 'football', label: "🎓 SMU פוטבול", color: '#a855f7', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/2567/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'Gerald J. Ford Stadium';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'University Park, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'ESPN / ESPN+ / ABC (משתנה)'}],
+          sport:'football', league:'NCAAF', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // פוטבול - TCU Horned Frogs (ESPN team id 2628)
+  { sport: 'football', label: "🎓 TCU פוטבול", color: '#a855f7', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/2628/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'Amon G. Carter Stadium';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Fort Worth, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'ESPN / ESPN+ / Big 12 Now (משתנה)'}],
+          sport:'football', league:'NCAAF', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // פוטבול - North Texas Mean Green (ESPN team id 249)
+  { sport: 'football', label: "🎓 UNT פוטבול", color: '#a855f7', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/249/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'DATCU Stadium';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Denton, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'ESPN+ / American Conference Network (משתנה)'}],
+          sport:'football', league:'NCAAF', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // כדורסל - SMU Mustangs (ESPN team id 2567, אותו מזהה כמו פוטבול)
+  { sport: 'basketball', label: "🎓 SMU כדורסל", color: '#a855f7', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/2567/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'Moody Coliseum';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'University Park, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'ESPN+ / ACC Network (משתנה)'}],
+          sport:'basketball', league:'NCAAB', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // כדורסל - TCU Horned Frogs (ESPN team id 2628)
+  { sport: 'basketball', label: "🎓 TCU כדורסל", color: '#a855f7', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/2628/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'Schollmaier Arena';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Fort Worth, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'ESPN+ / Big 12 Now (משתנה)'}],
+          sport:'basketball', league:'NCAAB', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
+  // כדורסל - North Texas Mean Green (ESPN team id 249)
+  { sport: 'basketball', label: "🎓 UNT כדורסל", color: '#a855f7', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/249/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 7*86400000;
+        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'UNT Coliseum (Super Pit)';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Denton, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'ESPN+ / American Conference Network (משתנה)'}],
+          sport:'basketball', league:'NCAAB', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
           completed:false };
       }))
   },
@@ -2508,6 +2635,118 @@ async function loadDailyF1() {
     </div>`;
   } catch (e) {
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת F1</div>';
+  }
+}
+
+// ─── פוטבול מכללות (NCAAF) — ארצי, אותו דפוס בדיוק כמו NFL ──────────────
+async function loadDailyNCAAF() {
+  const el = document.getElementById('daily-ncaaf');
+  try {
+    const dateStr = txDateString(0);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      const res2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard');
+      const data2 = await res2.json();
+      const ev2 = data2.events || [];
+      if (!ev2.length) {
+        el.innerHTML = '<div class="daily-empty">אין משחקי פוטבול מכללות כעת (עונת הבין-עונות)</div>';
+        return;
+      }
+      const makeRow = ev => {
+        const comp = ev.competitions?.[0] || {};
+        const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+        const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+        const home = homeTeam?.team?.abbreviation || '?';
+        const away = awayTeam?.team?.abbreviation || '?';
+        const time = formatGameDateTime(ev.date);
+        const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+        const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
+        const modalData = {
+          sport: 'football', league: 'NCAAF',
+          home: homeTeam?.team?.displayName || home,
+          away: awayTeam?.team?.displayName || away,
+          date: ev.date, tv: [], detail: note || 'NCAAF',
+          homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+          completed: !!comp.status?.type?.completed
+        };
+        const encoded = encodeURIComponent(JSON.stringify(modalData));
+        return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+          <div class="daily-game-teams">${away} @ ${home}</div>
+          <div class="daily-game-time">${status}</div>
+        </div>`;
+      };
+      el.innerHTML = ev2.slice(0, 6).map(makeRow).join('');
+      return;
+    }
+    const makeRow2 = ev => {
+      const comp = ev.competitions?.[0] || {};
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+      const home = homeTeam?.team?.abbreviation || '?';
+      const away = awayTeam?.team?.abbreviation || '?';
+      const time = formatGameDateTime(ev.date);
+      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+      const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
+      const modalData = {
+        sport: 'football', league: 'NCAAF',
+        home: homeTeam?.team?.displayName || home,
+        away: awayTeam?.team?.displayName || away,
+        date: ev.date, tv: [], detail: note || 'NCAAF',
+        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+        completed: !!comp.status?.type?.completed
+      };
+      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-time">${status}</div>
+      </div>`;
+    };
+    el.innerHTML = events.slice(0, 6).map(makeRow2).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת פוטבול מכללות</div>';
+  }
+}
+
+// ─── כדורסל מכללות (NCAAB) — ארצי, אותו דפוס בדיוק כמו NBA ──────────────
+async function loadDailyNCAAB() {
+  const el = document.getElementById('daily-ncaab');
+  try {
+    const dateStr = txDateString(0);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">אין משחקי כדורסל מכללות היום (או שהעונה טרם נפתחה - נוב׳-מרץ)</div>';
+      return;
+    }
+    el.innerHTML = events.slice(0, 6).map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+      const home = homeTeam?.team?.abbreviation || '?';
+      const away = awayTeam?.team?.abbreviation || '?';
+      const time = formatGameDateTime(ev.date);
+      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+      const modalData = {
+        sport: 'basketball', league: 'NCAAB',
+        home: homeTeam?.team?.displayName || home,
+        away: awayTeam?.team?.displayName || away,
+        date: ev.date, tv: [], detail: 'NCAAB',
+        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+        completed: !!comp.status?.type?.completed
+      };
+      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-time">${status}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת כדורסל מכללות</div>';
   }
 }
 </script>
