@@ -575,6 +575,7 @@
     .daily-section.nascar  { border-top-color: #f59e0b; }
     .daily-section.nascar-xfinity { border-top-color: #22d3ee; }
     .daily-section.nascar-truck   { border-top-color: #84cc16; }
+    .daily-section.mls    { border-top-color: #22c55e; }
     .daily-section.indycar        { border-top-color: #c084fc; }
     .daily-section.motogp         { border-top-color: #f43f5e; }
 
@@ -625,14 +626,17 @@
     .daily-section.nascar .daily-section-title { color: #f59e0b; }
     .daily-section.nascar-xfinity .daily-section-title { color: #22d3ee; }
     .daily-section.nascar-truck   .daily-section-title { color: #84cc16; }
+    .daily-section.mls    .daily-section-title { color: #22c55e; }
     .daily-section.indycar        .daily-section-title { color: #c084fc; }
     .daily-section.motogp         .daily-section-title { color: #f43f5e; }
     .daily-section.ncaaf          .daily-section-title,
     .daily-section.ncaab          .daily-section-title { color: #a855f7; }
     .daily-section.yesterday-nba { border-top-color: #f97316; }
     .daily-section.yesterday-ucl { border-top-color: #60a5fa; }
+    .daily-section.yesterday-nfl { border-top-color: #ef4444; }
     .daily-section.yesterday-nba .daily-section-title { color: #f97316; }
     .daily-section.yesterday-ucl .daily-section-title { color: #60a5fa; }
+    .daily-section.yesterday-nfl .daily-section-title { color: #ef4444; }
 
     .daily-game {
       display: flex;
@@ -943,6 +947,10 @@
       <div class="daily-section-title">⚾ MLB — היום</div>
       <div id="daily-mlb"><div class="daily-loading">טוען...</div></div>
     </div>
+    <div class="daily-section mls">
+      <div class="daily-section-title">⚽ MLS — הבא</div>
+      <div id="daily-mls"><div class="daily-loading">טוען...</div></div>
+    </div>
     <div class="daily-section nascar">
       <div class="daily-section-title">🏁 NASCAR Cup — הבא</div>
       <div id="daily-nascar"><div class="daily-loading">טוען...</div></div>
@@ -985,6 +993,10 @@
     <div class="daily-section yesterday-ucl">
       <div class="daily-section-title">⭐ ליגת האלופות — אתמול</div>
       <div id="yesterday-ucl"><div class="daily-loading">טוען...</div></div>
+    </div>
+    <div class="daily-section yesterday-nfl">
+      <div class="daily-section-title">🏈 NFL — אתמול</div>
+      <div id="yesterday-nfl"><div class="daily-loading">טוען...</div></div>
     </div>
   </div>
 </div>
@@ -1031,7 +1043,7 @@
   <div class="month-hero">
     <div class="month-hero-emoji">🗓️</div>
     <div class="month-hero-text">
-      <h2>משחקים בדאלאס בחודש הקרוב</h2>
+      <h2>משחקי דאלאס + שידורי F1 בחודש הקרוב</h2>
       <p>כל משחקי הבית שנמצאו בדאלאס&ndash;פורט וורת&#39; בין 15 בספטמבר ל-15 באוקטובר 2026 (שעון טקסס), לפי לוחות הזמנים הרשמיים שפורסמו. ליגות ללא משחקי בית מתוכננים בטווח הזה (עונה סגורה/אין אצטדיון פנוי כרגע) לא מופיעות כאן. נוספו גם מרוצי הפורמולה 1 שחלים בטווח הזה — אלה שידורי טלוויזיה, לא משחקי בית בדאלאס.</p>
       <div class="month-hero-badges">
         <span class="month-badge">📅 15/09 &ndash; 15/10/2026</span>
@@ -1111,6 +1123,12 @@ const entries = [
     sport: 'football',
     image: 'https://a.espncdn.com/i/teamlogos/soccer/500/86.png',
     fetch: () => fetchFootballNext(86, 'Real Madrid'),
+  },
+  {
+    name: 'ליאו מסי — Inter Miami CF',
+    sport: 'football',
+    image: 'https://a.espncdn.com/i/teamlogos/soccer/500/20232.png',
+    fetch: () => fetchFootballNext(20232, 'Inter Miami CF'),
   },
   {
     name: 'נבחרת ברזיל',
@@ -1588,11 +1606,13 @@ loadDailyNFL();
 loadDailyF1();
 loadDailyNHL();
 loadDailyMLB();
+loadDailyMLS();
 loadDailyNASCAR();
 loadDailyNCAAF();
 loadDailyNCAAB();
 loadYesterdayNBA();
 loadYesterdayUCL();
+loadYesterdayNFL();
 
 // ─── NHL Today ───────────────────────────────────────────────────────────
 async function loadDailyNHL() {
@@ -1680,6 +1700,63 @@ async function loadDailyMLB() {
   }
 }
 
+// ─── MLS — ארצי, אותו דפוס כמו NFL/NCAAF (היום, ואם אין - הסבב הקרוב) ────
+async function loadDailyMLS() {
+  const el = document.getElementById('daily-mls');
+  try {
+    const dateStr = txDateString(0);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    const makeRow = ev => {
+      const comp = ev.competitions?.[0] || {};
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+      const home = homeTeam?.team?.abbreviation || homeTeam?.team?.shortDisplayName || '?';
+      const away = awayTeam?.team?.abbreviation || awayTeam?.team?.shortDisplayName || '?';
+      const time = formatGameDateTime(ev.date);
+      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+      const modalData = {
+        sport: 'football', league: 'MLS',
+        home: homeTeam?.team?.displayName || home,
+        away: awayTeam?.team?.displayName || away,
+        date: ev.date, tv: [{ region: 'ארה"ב', channel: 'Apple TV+ / MLS Season Pass' }], detail: 'MLS',
+        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+        completed: !!comp.status?.type?.completed
+      };
+      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-time">${status}</div>
+      </div>`;
+    };
+    if (!events.length) {
+      // אין משחקים היום - לנסות טווח שבוע קדימה ולהציג את הסבב הקרוב
+      const res2 = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${txDateString(0)}-${txDateString(7)}`);
+      const data2 = await res2.json();
+      const nowFallback = Date.now();
+      const ev2 = (data2.events || [])
+        .filter(e => {
+          const c = e.competitions?.[0] || {};
+          const completed = c.status?.type?.completed;
+          const inProgress = c.status?.type?.inProgress;
+          return inProgress || (!completed && new Date(e.date).getTime() > nowFallback);
+        })
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      if (!ev2.length) {
+        el.innerHTML = '<div class="daily-empty">אין משחקי MLS קרובים</div>';
+        return;
+      }
+      el.innerHTML = ev2.slice(0, 8).map(makeRow).join('');
+      return;
+    }
+    el.innerHTML = events.slice(0, 8).map(makeRow).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת MLS</div>';
+  }
+}
+
 // ─── Yesterday Results ────────────────────────────────────────────────────
 
 async function loadYesterdayNBA() {
@@ -1756,6 +1833,43 @@ async function loadYesterdayUCL() {
   }
 }
 
+async function loadYesterdayNFL() {
+  const el = document.getElementById('yesterday-nfl');
+  try {
+    const dateStr = txDateString(-1);
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.events || [];
+    if (!events.length) {
+      el.innerHTML = '<div class="daily-empty">לא היו משחקי NFL אתמול</div>';
+      return;
+    }
+    el.innerHTML = events.map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const home = comp.competitors?.find(c => c.homeAway === 'home');
+      const away = comp.competitors?.find(c => c.homeAway === 'away');
+      const homeAbbr = home?.team?.abbreviation || '?';
+      const awayAbbr = away?.team?.abbreviation || '?';
+      const homeScore = home?.score != null ? Number(home.score) : null;
+      const awayScore = away?.score != null ? Number(away.score) : null;
+      const isCompleted = comp.status?.type?.completed;
+      const homeWon = isCompleted && homeScore != null && awayScore != null && homeScore > awayScore;
+      const awayWon = isCompleted && homeScore != null && awayScore != null && awayScore > homeScore;
+      const scoreStr = isCompleted && awayScore != null && homeScore != null
+        ? `${awayScore}–${homeScore}` : '—';
+      const homeDisp = homeWon ? `<strong>${homeAbbr}</strong>` : homeAbbr;
+      const awayDisp = awayWon ? `<strong>${awayAbbr}</strong>` : awayAbbr;
+      return `<div class="daily-game" dir="ltr">
+        <div class="daily-game-teams">${awayDisp} @ ${homeDisp}</div>
+        <div class="result-score">${scoreStr}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NFL</div>';
+  }
+}
+
 // Fetch next NFL week games
 async function loadDailyNFL() {
   const el = document.getElementById('daily-nfl');
@@ -1766,10 +1880,19 @@ async function loadDailyNFL() {
     const data = await res.json();
     const events = data.events || [];
     if (!events.length) {
-      // Try upcoming schedule
+      // Try upcoming schedule — ה-scoreboard בלי dates מחזיר את כל השבוע הנוכחי
+      // (כולל משחקים שכבר הסתיימו מוקדם יותר בשבוע), אז חובה לסנן לחי/עתידי בלבד
       const res2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
       const data2 = await res2.json();
-      const ev2 = data2.events || [];
+      const nowFallback = Date.now();
+      const ev2 = (data2.events || [])
+        .filter(e => {
+          const c = e.competitions?.[0] || {};
+          const completed = c.status?.type?.completed;
+          const inProgress = c.status?.type?.inProgress;
+          return inProgress || (!completed && new Date(e.date).getTime() > nowFallback);
+        })
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
       if (!ev2.length) {
         el.innerHTML = '<div class="daily-empty">אין משחקי NFL כעת (עונת הבין-עונות)</div>';
         return;
@@ -1899,7 +2022,7 @@ const DALLAS_TEAMS = [
   },
   // MLS - FC Dallas — scoreboard במקום schedule (schedule מחזיר 500)
   { sport: 'football', label: '⚽ MLS', color: '#60a5fa', fn: () =>
-    fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${txDateString(0)}`)
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${txDateString(0)}-${txDateString(7)}`)
       .then(r => r.ok ? r.json() : {events:[]})
       .catch(() => ({events:[]}))
       .then(d => {
@@ -2081,7 +2204,7 @@ async function loadDallasWeek() {
       completed: false
     };
     const encoded = encodeURIComponent(JSON.stringify(modalData));
-    return `<div class="dallas-card" onclick='openModal(decodeURIComponent("${encoded}")')
+    return `<div class="dallas-card" onclick='openModal(decodeURIComponent("${encoded}"))'
       style="border-top-color:${ev.color}">
       <div class="dallas-card-badge" style="color:${ev.color}">${ev.label}</div>
       <div class="dallas-card-title">${ev.title}</div>
@@ -2124,7 +2247,7 @@ function openModal(jsonStr) {
   // Teams / score
   let teamsHtml = `${d.away} <span style="color:#8a8fa8;font-weight:400">נגד</span> ${d.home}`;
   if (d.completed && d.awayScore != null && d.homeScore != null) {
-    teamsHtml += `<div style="font-size:1.4rem;margin-top:6px;color:#fff">${d.awayScore} – ${d.homeScore}</div>`;
+    teamsHtml += `<div dir="ltr" style="font-size:1.4rem;margin-top:6px;color:#fff">${d.awayScore}–${d.homeScore}</div>`;
   }
   document.getElementById('modal-teams').innerHTML = teamsHtml;
 
@@ -2407,12 +2530,17 @@ function renderMonthGames() {
 
 // ─── NASCAR Cup Series ─────────────────────────────
 // ─── Helper לכל סדרות המרוץ ─────────────────────────────
-function makeRaceWidget(elId, schedule, sport, league, color) {
+function makeRaceWidget(elId, schedule, sport, league, color, nextSeasonNote) {
   const el = document.getElementById(elId);
   if (!el) return;
   const now = Date.now();
   const next = schedule.find(r => new Date(r.date).getTime() > now - 3600000 * 6);
-  if (!next) { el.innerHTML = '<div class="daily-empty">סיים עונה</div>'; return; }
+  if (!next) {
+    el.innerHTML = nextSeasonNote
+      ? `<div class="daily-empty">העונה הסתיימה<br><span style="font-size:0.8rem">${nextSeasonNote}</span></div>`
+      : '<div class="daily-empty">סיים עונה</div>';
+    return;
+  }
   const raceDate = new Date(next.date);
   const isPast = raceDate.getTime() < now;
   const fullDate = raceDate.toLocaleDateString('he-IL', { weekday:'short', day:'numeric', month:'short', timeZone: TX_TZ });
@@ -2458,6 +2586,14 @@ const XFINITY_2026 = [
   { name: "NASCAR O'Reilly at Chicagoland", track: 'Chicagoland Speedway', city: 'Joliet, IL', date: '2026-07-04T21:00:00Z', tv: 'The CW' },
   { name: "NASCAR O'Reilly at North Wilkesboro", track: 'North Wilkesboro Speedway', city: 'North Wilkesboro, NC', date: '2026-07-18T21:00:00Z', tv: 'The CW' },
   { name: "NASCAR O'Reilly at Indianapolis", track: 'Indianapolis Motor Speedway', city: 'Indianapolis, IN', date: '2026-07-25T20:00:00Z', tv: 'The CW' },
+  // עדכון 15/09/2026: נוספו מרוצי הפלייאוף עד גמר העונה (אומת מול nascar.com)
+  { name: "NASCAR O'Reilly at Bristol", track: 'Bristol Motor Speedway', city: 'Bristol, TN', date: '2026-09-18T23:30:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Las Vegas", track: 'Las Vegas Motor Speedway', city: 'Las Vegas, NV', date: '2026-10-03T23:30:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Charlotte (Roval)", track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-10-10T20:00:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Phoenix", track: 'Phoenix Raceway', city: 'Avondale, AZ', date: '2026-10-17T23:30:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Talladega", track: 'Talladega Superspeedway', city: 'Talladega, AL', date: '2026-10-24T19:30:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Martinsville", track: 'Martinsville Speedway', city: 'Martinsville, VA', date: '2026-10-31T20:00:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly Series Championship — Homestead-Miami", track: 'Homestead-Miami Speedway', city: 'Homestead, FL', date: '2026-11-07T22:00:00Z', tv: 'The CW' },
 ];
 
 // ─── NASCAR Craftsman Truck ─────────────────────────────
@@ -2470,6 +2606,14 @@ const TRUCK_2026 = [
   { name: 'NASCAR Truck at Lime Rock', track: 'Lime Rock Park', city: 'Lakeville, CT', date: '2026-07-11T17:00:00Z', tv: 'FS1' },
   { name: 'NASCAR Truck at North Wilkesboro', track: 'North Wilkesboro Speedway', city: 'North Wilkesboro, NC', date: '2026-07-18T16:30:00Z', tv: 'FS1' },
   { name: 'NASCAR Truck at Indianapolis', track: 'Indianapolis Motor Speedway', city: 'Indianapolis, IN', date: '2026-07-25T20:00:00Z', tv: 'FS1' },
+  // עדכון 15/09/2026: נוספו מרוצי הפלייאוף עד גמר העונה (אומת מול nascar.com)
+  { name: 'NASCAR Truck at Bristol', track: 'Bristol Motor Speedway', city: 'Bristol, TN', date: '2026-09-18T00:00:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Kansas', track: 'Kansas Speedway', city: 'Kansas City, KS', date: '2026-09-26T17:00:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Charlotte', track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-10-09T21:00:00Z', tv: 'FOX' },
+  { name: 'NASCAR Truck at Phoenix', track: 'Phoenix Raceway', city: 'Avondale, AZ', date: '2026-10-16T23:30:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Talladega', track: 'Talladega Superspeedway', city: 'Talladega, AL', date: '2026-10-23T20:00:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck at Martinsville', track: 'Martinsville Speedway', city: 'Martinsville, VA', date: '2026-10-30T22:00:00Z', tv: 'FS1' },
+  { name: 'NASCAR Truck Series Championship — Homestead-Miami', track: 'Homestead-Miami Speedway', city: 'Homestead, FL', date: '2026-11-07T00:30:00Z', tv: 'FS1' },
 ];
 
 // ─── IndyCar Series ─────────────────────────────
@@ -2482,6 +2626,11 @@ const INDYCAR_2026 = [
   { name: 'Music City Grand Prix', track: 'Streets of Nashville', city: 'Nashville, TN', date: '2026-07-19T18:00:00Z', tv: 'FOX' },
   { name: 'Gallagher Grand Prix', track: 'Indianapolis Motor Speedway Road Course', city: 'Indianapolis, IN', date: '2026-08-09T20:00:00Z', tv: 'FOX' },
   { name: 'Streets of Markham Grand Prix', track: 'Streets of Markham', city: 'Markham, ON', date: '2026-08-16T16:00:00Z', tv: 'FOX' },
+  // עדכון 15/09/2026: הושלמו שאר מרוצי סוף העונה (אומת מול indycar.com/wikipedia) - העונה כבר הסתיימה נכון ל-15/09
+  { name: 'Freedom 250 Grand Prix of Washington, D.C.', track: 'Streets of Washington, D.C.', city: 'Washington, D.C.', date: '2026-08-23T15:30:00Z', tv: 'FOX' },
+  { name: 'Snap-on Makers and Fixers 250', track: 'Milwaukee Mile', city: 'West Allis, WI', date: '2026-08-29T22:00:00Z', tv: 'FS1' },
+  { name: 'Snap-on Milwaukee Mile 250', track: 'Milwaukee Mile', city: 'West Allis, WI', date: '2026-08-30T17:00:00Z', tv: 'FOX' },
+  { name: 'Mission Foods Grand Prix of Monterey (גמר העונה)', track: 'WeatherTech Raceway Laguna Seca', city: 'Monterey, CA', date: '2026-09-06T18:30:00Z', tv: 'FOX' },
 ];
 
 // ─── MotoGP World Championship ───────────────────────────
@@ -2493,11 +2642,23 @@ const MOTOGP_2026 = [
   { name: 'German Grand Prix', track: 'Sachsenring', city: 'Hohenstein-Ernstthal, Germany', date: '2026-07-12T13:00:00Z', tv: 'MotoGP VideoPass' },
   { name: 'British Grand Prix', track: 'Silverstone Circuit', city: 'Silverstone, UK', date: '2026-08-09T13:00:00Z', tv: 'MotoGP VideoPass' },
   { name: 'Aragon Grand Prix', track: 'MotorLand Aragon', city: 'Alcaniz, Spain', date: '2026-08-30T13:00:00Z', tv: 'MotoGP VideoPass' },
+  // עדכון 15/09/2026: נוספו שאר סבבי העונה עד הגמר בואלנסיה (אומת מול motogp.com; מרוץ = 14:00 שעון מקומי בכל מקום חוץ מקטאר)
+  { name: 'San Marino Grand Prix', track: 'Misano World Circuit', city: 'Misano Adriatico, Italy', date: '2026-09-13T12:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Austrian Grand Prix', track: 'Red Bull Ring', city: 'Spielberg, Austria', date: '2026-09-20T12:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Japanese Grand Prix', track: 'Mobility Resort Motegi', city: 'Motegi, Japan', date: '2026-10-04T05:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Indonesian Grand Prix', track: 'Pertamina Mandalika Circuit', city: 'Lombok, Indonesia', date: '2026-10-11T06:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Australian Grand Prix', track: 'Phillip Island Circuit', city: 'Phillip Island, Australia', date: '2026-10-25T03:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Malaysian Grand Prix', track: 'Sepang International Circuit', city: 'Sepang, Malaysia', date: '2026-11-01T06:00:00Z', tv: 'MotoGP VideoPass' },
+  // הערה: קטאר הוא מרוץ לילה תחת זרקורים - השעה כאן (19:00 שעון מקומי) משוערת לפי שנים קודמות,
+  // לא אומתה מול הלוח הרשמי ל-2026 (לא נמצא מקור מפורש) - כדאי לוודא סמוך למועד
+  { name: 'Qatar Grand Prix', track: 'Lusail International Circuit', city: 'Lusail, Qatar', date: '2026-11-08T16:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Portuguese Grand Prix', track: 'Autódromo Internacional do Algarve', city: 'Portimão, Portugal', date: '2026-11-22T14:00:00Z', tv: 'MotoGP VideoPass' },
+  { name: 'Valencia Grand Prix (גמר העונה)', track: 'Circuit Ricardo Tormo', city: 'Cheste, Spain', date: '2026-11-29T13:00:00Z', tv: 'MotoGP VideoPass' },
 ];
 
 function loadDailyNASCARXfinity() { makeRaceWidget('daily-nascar-xfinity', XFINITY_2026, 'nascar-xfinity', "NASCAR O'Reilly Series", '#22d3ee'); }
 function loadDailyNASCARTruck()   { makeRaceWidget('daily-nascar-truck',   TRUCK_2026,   'nascar-truck',   'NASCAR Truck Series',   '#84cc16'); }
-function loadDailyIndyCar()       { makeRaceWidget('daily-indycar',        INDYCAR_2026, 'indycar',        'IndyCar Series',        '#c084fc'); }
+function loadDailyIndyCar()       { makeRaceWidget('daily-indycar',        INDYCAR_2026, 'indycar',        'IndyCar Series',        '#c084fc', 'עונת 2026 הסתיימה ב-6/9 (מונטריי) · 2027 מתחילה ב-7/3/2027 (סנט פיטרסבורג, פלורידה)'); }
 function loadDailyMotoGP()        { makeRaceWidget('daily-motogp',         MOTOGP_2026,  'motogp',         'MotoGP World Championship', '#f43f5e'); }
 
 // עדכון פרטי ספורט לסדרות החדשות
@@ -2604,7 +2765,9 @@ async function loadDailyNASCAR() {
 async function loadDailyF1() {
   const el = document.getElementById('daily-f1');
   try {
-    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard');
+    // בלי טווח תאריכים ה-scoreboard מחזיר רק את השבוע הנוכחי - אם אין מרוץ השבוע
+    // זה מחזיר ריק גם אם העונה בעיצומה, לכן מבקשים טווח רחב קדימה (כל שאר העונה בערך)
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard?dates=${txDateString(0)}-${txDateString(120)}`);
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
     const now = Date.now();
@@ -2650,7 +2813,15 @@ async function loadDailyNCAAF() {
     if (!events.length) {
       const res2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard');
       const data2 = await res2.json();
-      const ev2 = data2.events || [];
+      const nowFallback = Date.now();
+      const ev2 = (data2.events || [])
+        .filter(e => {
+          const c = e.competitions?.[0] || {};
+          const completed = c.status?.type?.completed;
+          const inProgress = c.status?.type?.inProgress;
+          return inProgress || (!completed && new Date(e.date).getTime() > nowFallback);
+        })
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
       if (!ev2.length) {
         el.innerHTML = '<div class="daily-empty">אין משחקי פוטבול מכללות כעת (עונת הבין-עונות)</div>';
         return;
