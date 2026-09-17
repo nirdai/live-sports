@@ -425,7 +425,6 @@
       height: 3px;
     }
 
-    .card.tennis::before  { background: #4ade80; }
     .card.football::before { background: #60a5fa; }
     .card.basketball::before { background: #f97316; }
     .card.nfl::before { background: #ef4444; }
@@ -440,7 +439,6 @@
       opacity: 0.6;
     }
 
-    .card.tennis .sport-badge  { color: #4ade80; }
     .card.football .sport-badge { color: #60a5fa; }
     .card.basketball .sport-badge { color: #f97316; }
     .card.nfl .sport-badge { color: #ef4444; }
@@ -1159,15 +1157,6 @@ function googleCalendarURL(title, dateStr, detail) {
 }
 
 // ─── TV helpers ───────────────────────────────────────────────────────────
-function tennisTVUS(tournamentName) {
-  const t = (tournamentName || '').toLowerCase();
-  if (t.includes('australian open'))                              return 'ESPN2 / ESPN+';
-  if (t.includes('french open') || t.includes('roland garros'))  return 'Tennis Channel / NBC Sports';
-  if (t.includes('wimbledon'))                                    return 'ESPN / ESPN2 / ABC';
-  if (t.includes('us open'))                                      return 'ESPN2 / ESPN+';
-  return 'Tennis Channel';
-}
-
 function footballTVStatic(leagueName) {
   const l = (leagueName || '').toLowerCase();
   if (l.includes('premier league'))   return { ar: null, uk: 'Sky Sports PL / TNT Sports', us: 'Peacock / USA Network' };
@@ -1177,44 +1166,6 @@ function footballTVStatic(leagueName) {
   if (l.includes('libertadores'))     return { ar: 'ESPN Premium / Star+', uk: null, us: 'Paramount+' };
   if (l.includes('sudamericana'))     return { ar: 'ESPN Premium / Star+', uk: null, us: 'Paramount+' };
   return { ar: null, uk: null, us: null };
-}
-
-// ─── Tennis (ESPN, no key needed) ────────────────────────────────────────
-async function fetchTennisNext(playerName) {
-  const lastName = playerName.split(' ').pop().toLowerCase();
-  const now = Date.now();
-
-  for (let day = 0; day < 14; day++) {
-    const dateStr = new Date(now + day * 86400000).toISOString().slice(0,10).replace(/-/g,'');
-    let data;
-    try {
-      const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard?dates=${dateStr}`);
-      data = await res.json();
-    } catch { continue; }
-
-    for (const event of (data.events || [])) {
-      for (const grouping of (event.groupings || event.competitions ? [event] : [])) {
-        const comps = grouping.groupings
-          ? grouping.groupings.flatMap(g => g.competitions || [])
-          : (grouping.competitions || []);
-        for (const comp of comps) {
-          if (comp.status?.type?.completed) continue;
-          const competitors = comp.competitors || [];
-          const names = competitors.map(c => c.athlete?.displayName || '');
-          const idx = names.findIndex(n => n.toLowerCase().includes(lastName));
-          if (idx === -1) continue;
-          const tournament = event.name || event.shortName || '—';
-          return {
-            vs: names[idx === 0 ? 1 : 0] || 'טרם נקבע',
-            detail: tournament + (comp.round?.displayName ? ' · ' + comp.round.displayName : ''),
-            date: comp.date || '',
-            tv: [{ region: 'ארה"ב', channel: tennisTVUS(tournament) }],
-          };
-        }
-      }
-    }
-  }
-  throw new Error('no_upcoming');
 }
 
 // ─── MLB (ESPN, no key needed) ───────────────────────────────────────────
@@ -1341,7 +1292,15 @@ async function fetchFootballNext(teamId, teamName) {
   const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/all/teams/${teamId}/schedule?fixture=true`);
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const data = await res.json();
-  const events = data.events || [];
+  const now = Date.now();
+  // תיקון 16/09/2026: בשונה משאר פונקציות ה-fetch (MLB/NFL/NBA), הפונקציה הזו לא סיננה
+  // משחקים עתידיים/לא-הסתיימו לפני שלוקחים את הראשון - תוקן לאותו pattern
+  const events = (data.events || [])
+    .filter(e => {
+      const completed = e.competitions?.[0]?.status?.type?.completed;
+      return !completed && new Date(e.date).getTime() > now;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
   if (!events.length) throw new Error('no_upcoming');
 
   const event = events[0];
@@ -1422,12 +1381,12 @@ async function buildCard(entry) {
     const match = await entry.fetch();
     const countdown = formatCountdown(match.date);
     const tvLines = (match.tv || []).map(item =>
-      `<div class="match-detail"><span class="icon">📺</span> <span class="tv-region">${item.region}:</span> ${item.channel}</div>`
+      `<div class="match-detail"><span class="icon">📺</span> <span class="tv-region">${escapeHtml(item.region)}:</span> ${escapeHtml(item.channel)}</div>`
     ).join('');
     info.innerHTML = `
-      <div class="match-vs">נגד: ${match.vs}</div>
-      <div class="match-detail"><span class="icon">🏆</span> ${match.detail || '—'}</div>
-      <div class="match-detail">${(() => { const tvDesc = (match.tv || []).map(t => `📺 ${t.region}: ${t.channel}`).join('\n'); const desc = [match.detail, tvDesc].filter(Boolean).join('\n'); const u = googleCalendarURL(`${entry.name} נגד ${match.vs}`, match.date, desc); return u ? `<a href="${u}" target="_blank" class="cal-link" title="הוסף ללוח שנה של גוגל"><span class="icon">📅</span></a>` : '<span class="icon">📅</span>'; })()} ${formatDate(match.date)}</div>
+      <div class="match-vs">נגד: ${escapeHtml(match.vs)}</div>
+      <div class="match-detail"><span class="icon">🏆</span> ${escapeHtml(match.detail) || '—'}</div>
+      <div class="match-detail">${(() => { const tvDesc = (match.tv || []).map(t => `📺 ${t.region}: ${t.channel}`).join('\n'); const desc = [match.detail, tvDesc].filter(Boolean).join('\n'); const u = googleCalendarURL(`${entry.name} נגד ${match.vs}`, match.date, desc); return u ? `<a href="${u}" target="_blank" rel="noopener noreferrer" class="cal-link" title="הוסף ללוח שנה של גוגל"><span class="icon">📅</span></a>` : '<span class="icon">📅</span>'; })()} ${formatDate(match.date)}</div>
       ${tvLines}
       ${countdown ? `<span class="countdown">${countdown}</span>` : ''}
     `;
@@ -1538,9 +1497,9 @@ async function loadDailyNBA() {
         homeScore: homeTeam?.score, awayScore: awayTeam?.score,
         completed: !!comp.status?.type?.completed
       };
-      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      const encoded = encodeModalData(modalData);
       return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
         <div class="daily-game-time">${status}</div>
       </div>`;
     }).join('');
@@ -1589,9 +1548,9 @@ async function loadDailyUCL() {
         homeScore: homeTeam?.score, awayScore: awayTeam?.score,
         completed: !!comp.status?.type?.completed
       };
-      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      const encoded = encodeModalData(modalData);
       return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
         <div class="daily-game-time">${status}</div>
       </div>`;
     }).join('');
@@ -1648,9 +1607,9 @@ async function loadDailyNHL() {
         homeScore: homeTeam?.score, awayScore: awayTeam?.score,
         completed: !!comp.status?.type?.completed
       };
-      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      const encoded = encodeModalData(modalData);
       return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
         <div class="daily-game-time">${status}</div>
       </div>`;
     }).join('');
@@ -1689,9 +1648,9 @@ async function loadDailyMLB() {
         homeScore: homeTeam?.score, awayScore: awayTeam?.score,
         completed: !!comp.status?.type?.completed
       };
-      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      const encoded = encodeModalData(modalData);
       return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
         <div class="daily-game-time">${status}</div>
       </div>`;
     }).join('');
@@ -1725,9 +1684,9 @@ async function loadDailyMLS() {
         homeScore: homeTeam?.score, awayScore: awayTeam?.score,
         completed: !!comp.status?.type?.completed
       };
-      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      const encoded = encodeModalData(modalData);
       return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
         <div class="daily-game-time">${status}</div>
       </div>`;
     };
@@ -1784,8 +1743,10 @@ async function loadYesterdayNBA() {
       const awayWon = isCompleted && homeScore != null && awayScore != null && awayScore > homeScore;
       const scoreStr = isCompleted && awayScore != null && homeScore != null
         ? `${awayScore}\u2013${homeScore}` : '\u2014';
-      const homeDisp = homeWon ? `<strong>${homeAbbr}</strong>` : homeAbbr;
-      const awayDisp = awayWon ? `<strong>${awayAbbr}</strong>` : awayAbbr;
+      const homeAbbrSafe = escapeHtml(homeAbbr);
+      const awayAbbrSafe = escapeHtml(awayAbbr);
+      const homeDisp = homeWon ? `<strong>${homeAbbrSafe}</strong>` : homeAbbrSafe;
+      const awayDisp = awayWon ? `<strong>${awayAbbrSafe}</strong>` : awayAbbrSafe;
       return `<div class="daily-game" dir="ltr">
         <div class="daily-game-teams">${awayDisp} @ ${homeDisp}</div>
         <div class="result-score">${scoreStr}</div>
@@ -1821,8 +1782,10 @@ async function loadYesterdayUCL() {
       const awayWon = isCompleted && homeScore != null && awayScore != null && awayScore > homeScore;
       const scoreStr = isCompleted && awayScore != null && homeScore != null
         ? `${awayScore}\u2013${homeScore}` : '\u2014';
-      const homeDisp = homeWon ? `<strong>${homeName}</strong>` : homeName;
-      const awayDisp = awayWon ? `<strong>${awayName}</strong>` : awayName;
+      const homeNameSafe = escapeHtml(homeName);
+      const awayNameSafe = escapeHtml(awayName);
+      const homeDisp = homeWon ? `<strong>${homeNameSafe}</strong>` : homeNameSafe;
+      const awayDisp = awayWon ? `<strong>${awayNameSafe}</strong>` : awayNameSafe;
       return `<div class="daily-game" dir="ltr">
         <div class="daily-game-teams">${awayDisp} @ ${homeDisp}</div>
         <div class="result-score">${scoreStr}</div>
@@ -1858,8 +1821,10 @@ async function loadYesterdayNFL() {
       const awayWon = isCompleted && homeScore != null && awayScore != null && awayScore > homeScore;
       const scoreStr = isCompleted && awayScore != null && homeScore != null
         ? `${awayScore}–${homeScore}` : '—';
-      const homeDisp = homeWon ? `<strong>${homeAbbr}</strong>` : homeAbbr;
-      const awayDisp = awayWon ? `<strong>${awayAbbr}</strong>` : awayAbbr;
+      const homeAbbrSafe = escapeHtml(homeAbbr);
+      const awayAbbrSafe = escapeHtml(awayAbbr);
+      const homeDisp = homeWon ? `<strong>${homeAbbrSafe}</strong>` : homeAbbrSafe;
+      const awayDisp = awayWon ? `<strong>${awayAbbrSafe}</strong>` : awayAbbrSafe;
       return `<div class="daily-game" dir="ltr">
         <div class="daily-game-teams">${awayDisp} @ ${homeDisp}</div>
         <div class="result-score">${scoreStr}</div>
@@ -1880,9 +1845,11 @@ async function loadDailyNFL() {
     const data = await res.json();
     const events = data.events || [];
     if (!events.length) {
-      // Try upcoming schedule — ה-scoreboard בלי dates מחזיר את כל השבוע הנוכחי
-      // (כולל משחקים שכבר הסתיימו מוקדם יותר בשבוע), אז חובה לסנן לחי/עתידי בלבד
-      const res2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
+      // Try upcoming schedule - ה-scoreboard בלי dates מחזיר רק את השבוע הנוכחי (יום א'-שבת),
+      // אז אם כל משחקי השבוע הזה כבר הסתיימו (למשל יום שלישי/רביעי, אחרי MNF ולפני המשחק הבא)
+      // הוא היה מחזיר ריק - וזה לא אומר "עונת הבין-עונות", רק שאין משחק היום-מחר. מבקשים
+      // טווח של 10 ימים קדימה כדי למצוא בפועל את המשחק הבא, גם אם הוא בשבוע הבא
+      const res2 = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${txDateString(0)}-${txDateString(10)}`);
       const data2 = await res2.json();
       const nowFallback = Date.now();
       const ev2 = (data2.events || [])
@@ -1894,7 +1861,7 @@ async function loadDailyNFL() {
         })
         .sort((a, b) => new Date(a.date) - new Date(b.date));
       if (!ev2.length) {
-        el.innerHTML = '<div class="daily-empty">אין משחקי NFL כעת (עונת הבין-עונות)</div>';
+        el.innerHTML = '<div class="daily-empty">אין משחקי NFL קרובים בימים הקרובים</div>';
         return;
       }
       const makeNFLRow = ev => {
@@ -1914,9 +1881,9 @@ async function loadDailyNFL() {
           homeScore: homeTeam?.score, awayScore: awayTeam?.score,
           completed: !!comp.status?.type?.completed
         };
-        const encoded = encodeURIComponent(JSON.stringify(modalData));
+        const encoded = encodeModalData(modalData);
         return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-          <div class="daily-game-teams">${away} @ ${home}</div>
+          <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
           <div class="daily-game-time">${status}</div>
         </div>`;
       };
@@ -1940,9 +1907,9 @@ async function loadDailyNFL() {
         homeScore: homeTeam?.score, awayScore: awayTeam?.score,
         completed: !!comp.status?.type?.completed
       };
-      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      const encoded = encodeModalData(modalData);
       return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
         <div class="daily-game-time">${status}</div>
       </div>`;
     };
@@ -2203,15 +2170,15 @@ async function loadDallasWeek() {
       city: ev.city || null,
       completed: false
     };
-    const encoded = encodeURIComponent(JSON.stringify(modalData));
+    const encoded = encodeModalData(modalData);
     return `<div class="dallas-card" onclick='openModal(decodeURIComponent("${encoded}"))'
       style="border-top-color:${ev.color}">
-      <div class="dallas-card-badge" style="color:${ev.color}">${ev.label}</div>
-      <div class="dallas-card-title">${ev.title}</div>
+      <div class="dallas-card-badge" style="color:${ev.color}">${escapeHtml(ev.label)}</div>
+      <div class="dallas-card-title">${escapeHtml(ev.title)}</div>
       <div class="dallas-card-detail">📅 ${fullDate}</div>
       <div class="dallas-card-detail">🕐 ${time}</div>
-      <div class="dallas-card-detail">🏟️ ${ev.detail}</div>
-      ${ev.city ? `<div class="dallas-card-detail">📍 ${ev.city}</div>` : ''}
+      <div class="dallas-card-detail">🏟️ ${escapeHtml(ev.detail)}</div>
+      ${ev.city ? `<div class="dallas-card-detail">📍 ${escapeHtml(ev.city)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -2235,6 +2202,26 @@ const SPORT_LABEL = {
   football:'כדורגל', basketball:'כדורסל', nfl:'NFL', baseball:'בייסבול', tennis:'טניס', f1:'F1', hockey:'הוקי קרח', nascar:'NASCAR'
 };
 
+// תיקון אבטחה/פונקציונליות 16/09/2026:
+// (1) escapeHtml - כל טקסט שמגיע מ-API חיצוני (ESPN/365scores) חייב לעבור דרך זה לפני הכנסה ל-innerHTML,
+//     כדי שתו כמו < או " לא "יברח" מהמקום שלו ב-HTML (הגנת XSS בסיסית).
+// (2) encodeModalData - מחליף את encodeURIComponent(JSON.stringify(...)) הישן בכל מקום שבו בונים onclick.
+//     הבעיה שתוקנה: encodeURIComponent לא מקודד את תו הגרש ('), אבל ה-onclick עטוף בגרשיים בודדים -
+//     כל שם קבוצה עם גרש (למשל "Saint Mary's" בקולג' פוטבול/כדורסל) שבר בפועל את הכרטיס.
+//     הפתרון: לקודד ידנית גם גרשים ל-%27 אחרי encodeURIComponent (decodeURIComponent עדיין מפענח את זה נכון).
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function encodeModalData(obj) {
+  return encodeURIComponent(JSON.stringify(obj)).replace(/'/g, '%27');
+}
+
 function openModal(jsonStr) {
   const d = JSON.parse(jsonStr);
   const color = SPORT_COLORS[d.sport] || '#8a8fa8';
@@ -2244,10 +2231,10 @@ function openModal(jsonStr) {
   document.getElementById('modal-badge').textContent =
     `${SPORT_EMOJI[d.sport] || '🏅'} ${SPORT_LABEL[d.sport] || d.sport}`;
 
-  // Teams / score
-  let teamsHtml = `${d.away} <span style="color:#8a8fa8;font-weight:400">נגד</span> ${d.home}`;
+  // Teams / score - escapeHtml על כל טקסט שמגיע מה-API לפני הכנסה ל-innerHTML
+  let teamsHtml = `${escapeHtml(d.away)} <span style="color:#8a8fa8;font-weight:400">נגד</span> ${escapeHtml(d.home)}`;
   if (d.completed && d.awayScore != null && d.homeScore != null) {
-    teamsHtml += `<div dir="ltr" style="font-size:1.4rem;margin-top:6px;color:#fff">${d.awayScore}–${d.homeScore}</div>`;
+    teamsHtml += `<div dir="ltr" style="font-size:1.4rem;margin-top:6px;color:#fff">${escapeHtml(d.awayScore)}–${escapeHtml(d.homeScore)}</div>`;
   }
   document.getElementById('modal-teams').innerHTML = teamsHtml;
 
@@ -2269,7 +2256,7 @@ function openModal(jsonStr) {
 
   // TV rows
   const tvRows = (d.tv || []).map(t =>
-    `<div class="modal-row"><span class="icon">📺</span><strong>${t.region}:</strong>&nbsp;${t.channel}</div>`
+    `<div class="modal-row"><span class="icon">📺</span><strong>${escapeHtml(t.region)}:</strong>&nbsp;${escapeHtml(t.channel)}</div>`
   ).join('');
 
   // Google Calendar URL — built inline to avoid dependency issues
@@ -2289,14 +2276,14 @@ function openModal(jsonStr) {
   }
 
   document.getElementById('modal-body').innerHTML = `
-    <div class="modal-row"><span class="icon">🏆</span>&nbsp;${d.detail || d.league}</div>
-    ${d.series ? `<div class="modal-row"><span class="icon">📊</span>&nbsp;<strong style="color:#facc15">${d.series}</strong></div>` : ''}
-    ${d.venue ? `<div class="modal-row"><span class="icon">🏟️</span>&nbsp;${d.venue}</div>` : ''}
-    ${d.city  ? `<div class="modal-row"><span class="icon">📍</span>&nbsp;${d.city}</div>`  : ''}
+    <div class="modal-row"><span class="icon">🏆</span>&nbsp;${escapeHtml(d.detail || d.league)}</div>
+    ${d.series ? `<div class="modal-row"><span class="icon">📊</span>&nbsp;<strong style="color:#facc15">${escapeHtml(d.series)}</strong></div>` : ''}
+    ${d.venue ? `<div class="modal-row"><span class="icon">🏟️</span>&nbsp;${escapeHtml(d.venue)}</div>` : ''}
+    ${d.city  ? `<div class="modal-row"><span class="icon">📍</span>&nbsp;${escapeHtml(d.city)}</div>`  : ''}
     <div class="modal-row"><span class="icon">📅</span>&nbsp;${formatDateTX(d.date)}</div>
     ${tvRows}
     ${countdown ? `<div style="margin-top:12px"><span class="modal-countdown">${countdown}</span></div>` : ''}
-    ${calURL   ? `<div style="margin-top:12px"><a href="${calURL}" target="_blank" class="modal-cal-btn">📆 הוסף ל-Google Calendar</a></div>` : ''}
+    ${calURL   ? `<div style="margin-top:12px"><a href="${calURL}" target="_blank" rel="noopener noreferrer" class="modal-cal-btn">📆 הוסף ל-Google Calendar</a></div>` : ''}
   `;
 
   document.getElementById('game-modal').classList.add('open');
@@ -2529,12 +2516,18 @@ function renderMonthGames() {
 }
 
 // ─── NASCAR Cup Series ─────────────────────────────
+// משך משוער (שעות) לכל סוג מרוץ, כדי להציג "בשידור חי" ולא לקפוץ ישר ל"הסתיים"
+// ברגע ששעת ההתחלה עוברת - מרוץ יכול לקחת 1.5-4 שעות בפועל.
+const RACE_DURATION_HOURS = {
+  'nascar': 4, 'nascar-xfinity': 3.5, 'nascar-truck': 3, 'indycar': 3, 'motogp': 1.5,
+};
 // ─── Helper לכל סדרות המרוץ ─────────────────────────────
 function makeRaceWidget(elId, schedule, sport, league, color, nextSeasonNote) {
   const el = document.getElementById(elId);
   if (!el) return;
   const now = Date.now();
-  const next = schedule.find(r => new Date(r.date).getTime() > now - 3600000 * 6);
+  const durationMs = (RACE_DURATION_HOURS[sport] || 4) * 3600000;
+  const next = schedule.find(r => new Date(r.date).getTime() > now - durationMs - 3600000);
   if (!next) {
     el.innerHTML = nextSeasonNote
       ? `<div class="daily-empty">העונה הסתיימה<br><span style="font-size:0.8rem">${nextSeasonNote}</span></div>`
@@ -2542,20 +2535,23 @@ function makeRaceWidget(elId, schedule, sport, league, color, nextSeasonNote) {
     return;
   }
   const raceDate = new Date(next.date);
-  const isPast = raceDate.getTime() < now;
+  const isLive = now >= raceDate.getTime() && now < raceDate.getTime() + durationMs;
+  const isPast = now >= raceDate.getTime() + durationMs;
   const fullDate = raceDate.toLocaleDateString('he-IL', { weekday:'short', day:'numeric', month:'short', timeZone: TX_TZ });
   const timeStr = formatTimeHe(next.date);
   const diffMs = raceDate.getTime() - now;
   const days  = Math.floor(diffMs / 86400000);
   const hours = Math.floor((diffMs % 86400000) / 3600000);
   const mins  = Math.floor((diffMs % 3600000) / 60000);
-  const countdown = isPast ? null
+  const countdown = (isPast || isLive) ? null
     : days  > 0 ? `בעוד ${days} ימים`
     : hours > 0 ? `בעוד ${hours} שעות`
     : mins  > 0 ? `בעוד ${mins} דקות`
     : 'עכשיו!';
   const statusLine = isPast
     ? `<div class="daily-game-time" style="color:#4ade80">✅ הסתיים</div>`
+    : isLive
+    ? `<div class="daily-game-time" style="color:#ef4444;font-weight:700">🔴 בשידור חי</div>`
     : `<div class="daily-game-time" style="color:${color};font-weight:700">⏱️ ${countdown}</div>`;
   const modalData = {
     sport, league, home: next.name, away: '',
@@ -2564,7 +2560,7 @@ function makeRaceWidget(elId, schedule, sport, league, color, nextSeasonNote) {
     detail: league, venue: next.track, city: next.city,
     completed: isPast
   };
-  const encoded = encodeURIComponent(JSON.stringify(modalData));
+  const encoded = encodeModalData(modalData);
   el.innerHTML = `
     <div class="daily-game clickable" style="flex-direction:column;align-items:flex-start;gap:5px"
          onclick='openModal(decodeURIComponent("${encoded}"))'>
@@ -2696,13 +2692,24 @@ async function loadDailyNASCAR() {
     { name: 'NASCAR Cup Series at Iowa', track: 'Iowa Speedway', city: 'Newton, IA', date: '2026-08-09T21:00:00Z', tv: 'TNT Sports' },
     { name: 'NASCAR Cup Series at New Hampshire', track: 'New Hampshire Motor Speedway', city: 'Loudon, NH', date: '2026-08-23T19:30:00Z', tv: 'TNT Sports' },
     { name: 'Daytona Night Race', track: 'Daytona International Speedway', city: 'Daytona Beach, FL', date: '2026-08-29T23:30:00Z', tv: 'USA Network' },
+    // עדכון 16/09/2026: נוסף לוח הפלייאוף (Round of 16/12/8 + גמר) - פוספס בעדכון הקודם שהוסיף רק ל-Xfinity/Truck/IndyCar/MotoGP
+    // (Darlington 6/9 ו-WWTR/St. Louis 13/9 כבר עברו נכון ל-16/9, לא נוספו) - אומת מול nascar.com PDF רשמי
+    { name: 'NASCAR Cup Series at Bristol (Round of 16)', track: 'Bristol Motor Speedway', city: 'Bristol, TN', date: '2026-09-19T23:30:00Z', tv: 'USA Network' },
+    { name: 'NASCAR Cup Series at Kansas (Round of 16)', track: 'Kansas Speedway', city: 'Kansas City, KS', date: '2026-09-27T19:00:00Z', tv: 'USA Network' },
+    { name: 'NASCAR Cup Series at Las Vegas (Round of 12)', track: 'Las Vegas Motor Speedway', city: 'Las Vegas, NV', date: '2026-10-04T21:30:00Z', tv: 'USA Network' },
+    { name: 'NASCAR Cup Series at Charlotte Roval (Round of 12)', track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-10-11T19:00:00Z', tv: 'USA Network' },
+    { name: 'NASCAR Cup Series at Phoenix (Round of 12)', track: 'Phoenix Raceway', city: 'Avondale, AZ', date: '2026-10-18T19:00:00Z', tv: 'USA Network' },
+    { name: 'NASCAR Cup Series at Talladega (Round of 8)', track: 'Talladega Superspeedway', city: 'Talladega, AL', date: '2026-10-25T18:00:00Z', tv: 'NBC' },
+    { name: 'NASCAR Cup Series at Martinsville (Round of 8)', track: 'Martinsville Speedway', city: 'Martinsville, VA', date: '2026-11-01T19:00:00Z', tv: 'NBC' },
+    { name: 'NASCAR Cup Series Championship — Homestead-Miami', track: 'Homestead-Miami Speedway', city: 'Homestead, FL', date: '2026-11-08T20:00:00Z', tv: 'NBC' },
   ];
 
   try {
     const now = Date.now();
+    const durationMs = RACE_DURATION_HOURS['nascar'] * 3600000;
 
     // מצא את המירוץ הבא מהליסט הסטטי
-    const next = NASCAR_2026.find(r => new Date(r.date).getTime() > now - 3600000 * 6);
+    const next = NASCAR_2026.find(r => new Date(r.date).getTime() > now - durationMs - 3600000);
 
     if (!next) {
       el.innerHTML = '<div class="daily-empty">סיים לוח המרוצים לעונת 2026</div>';
@@ -2710,8 +2717,9 @@ async function loadDailyNASCAR() {
     }
 
     const raceDate = new Date(next.date);
-    const isPast = raceDate.getTime() < now;
-    const isToday = !isPast && (raceDate.getTime() - now) < 86400000;
+    const isLive = now >= raceDate.getTime() && now < raceDate.getTime() + durationMs;
+    const isPast = now >= raceDate.getTime() + durationMs;
+    const isToday = !isPast && !isLive && (raceDate.getTime() - now) < 86400000;
 
     const fullDate = raceDate.toLocaleDateString('he-IL', {
       weekday: 'short', day: 'numeric', month: 'short', timeZone: TX_TZ
@@ -2721,6 +2729,8 @@ async function loadDailyNASCAR() {
     let statusLine = '';
     if (isPast) {
       statusLine = `<div class="daily-game-time" style="color:#4ade80">✅ הסתיים</div>`;
+    } else if (isLive) {
+      statusLine = `<div class="daily-game-time" style="color:#ef4444;font-weight:700">🔴 בשידור חי</div>`;
     } else {
       const diffMs = raceDate.getTime() - now;
       const days = Math.floor(diffMs / 86400000);
@@ -2743,7 +2753,7 @@ async function loadDailyNASCAR() {
       venue: next.track, city: next.city,
       completed: isPast
     };
-    const encoded = encodeURIComponent(JSON.stringify(modalData));
+    const encoded = encodeModalData(modalData);
 
     el.innerHTML = `
       <div class="daily-game clickable" style="flex-direction:column;align-items:flex-start;gap:5px"
@@ -2792,8 +2802,8 @@ async function loadDailyF1() {
       : comp.status?.type?.inProgress ? '🔴 חי'
       : `${fullDate} ${dateStr}`;
     el.innerHTML = `<div class="daily-game" style="flex-direction:column;align-items:flex-start;gap:4px;">
-      <div class="daily-game-teams">${raceName}</div>
-      ${circuit ? `<div class="daily-game-time">📍 ${circuit}</div>` : ''}
+      <div class="daily-game-teams">${escapeHtml(raceName)}</div>
+      ${circuit ? `<div class="daily-game-time">📍 ${escapeHtml(circuit)}</div>` : ''}
       <div class="daily-game-time">⏰ ${status}</div>
     </div>`;
   } catch (e) {
@@ -2811,7 +2821,7 @@ async function loadDailyNCAAF() {
     const data = await res.json();
     const events = data.events || [];
     if (!events.length) {
-      const res2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard');
+      const res2 = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=${txDateString(0)}-${txDateString(10)}`);
       const data2 = await res2.json();
       const nowFallback = Date.now();
       const ev2 = (data2.events || [])
@@ -2823,7 +2833,7 @@ async function loadDailyNCAAF() {
         })
         .sort((a, b) => new Date(a.date) - new Date(b.date));
       if (!ev2.length) {
-        el.innerHTML = '<div class="daily-empty">אין משחקי פוטבול מכללות כעת (עונת הבין-עונות)</div>';
+        el.innerHTML = '<div class="daily-empty">אין משחקי פוטבול מכללות קרובים בימים הקרובים</div>';
         return;
       }
       const makeRow = ev => {
@@ -2843,9 +2853,9 @@ async function loadDailyNCAAF() {
           homeScore: homeTeam?.score, awayScore: awayTeam?.score,
           completed: !!comp.status?.type?.completed
         };
-        const encoded = encodeURIComponent(JSON.stringify(modalData));
+        const encoded = encodeModalData(modalData);
         return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-          <div class="daily-game-teams">${away} @ ${home}</div>
+          <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
           <div class="daily-game-time">${status}</div>
         </div>`;
       };
@@ -2869,9 +2879,9 @@ async function loadDailyNCAAF() {
         homeScore: homeTeam?.score, awayScore: awayTeam?.score,
         completed: !!comp.status?.type?.completed
       };
-      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      const encoded = encodeModalData(modalData);
       return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
         <div class="daily-game-time">${status}</div>
       </div>`;
     };
@@ -2910,9 +2920,9 @@ async function loadDailyNCAAB() {
         homeScore: homeTeam?.score, awayScore: awayTeam?.score,
         completed: !!comp.status?.type?.completed
       };
-      const encoded = encodeURIComponent(JSON.stringify(modalData));
+      const encoded = encodeModalData(modalData);
       return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${away} @ ${home}</div>
+        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
         <div class="daily-game-time">${status}</div>
       </div>`;
     }).join('');
