@@ -717,6 +717,71 @@
     }
     .modal-close:hover { color: #fff; }
 
+    /* ─── כפתור יומן שגיאות ─── */
+    .error-log-btn {
+      position: fixed;
+      bottom: 18px;
+      left: 18px;
+      z-index: 900;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      color: #8a8fa8;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .error-log-btn:hover { color: #fff; border-color: #4a4d5e; }
+    .error-log-btn.has-errors { color: #ef4444; border-color: #ef4444; }
+    .error-log-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+    .error-log-badge.show { display: flex; }
+
+    .error-log-modal-inner { max-width: 560px; max-height: 80vh; display: flex; flex-direction: column; }
+    .error-log-list { overflow-y: auto; margin-top: 8px; }
+    .error-log-entry {
+      border-bottom: 1px solid #2a2d3e;
+      padding: 10px 0;
+      font-size: 0.85rem;
+    }
+    .error-log-entry:last-child { border-bottom: none; }
+    .error-log-entry-context { color: #ef4444; font-weight: 700; margin-bottom: 3px; }
+    .error-log-entry-time { color: #8a8fa8; font-size: 0.72rem; margin-bottom: 3px; }
+    .error-log-entry-message { color: #cbd0e0; word-break: break-word; direction: ltr; text-align: left; }
+    .error-log-empty { color: #8a8fa8; padding: 20px 0; text-align: center; }
+    .error-log-clear-btn {
+      background: #2a2d3e;
+      border: none;
+      color: #cbd0e0;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-top: 12px;
+      align-self: flex-start;
+    }
+    .error-log-clear-btn:hover { background: #3a3d4e; }
+
     .modal-sport-bar {
       height: 4px;
       border-radius: 4px;
@@ -907,6 +972,22 @@
   </div>
 </div>
 
+<!-- כפתור + חלון יומן שגיאות -->
+<button class="error-log-btn" id="error-log-btn" onclick="openErrorLog()" title="יומן שגיאות">
+  🐞<span class="error-log-badge" id="error-log-badge">0</span>
+</button>
+<div class="modal-backdrop" id="error-log-modal" onclick="closeErrorLog(event)">
+  <div class="modal error-log-modal-inner" id="error-log-modal-inner">
+    <button class="modal-close" onclick="closeErrorLog(null, true)">✕</button>
+    <div class="modal-teams">יומן שגיאות</div>
+    <div class="daily-empty" style="font-size:0.78rem;color:#8a8fa8;margin-bottom:0">
+      שגיאות שהתקבלו מקריאות הנתונים החיים בעמוד הזה (לא נשלח לשום מקום, נשמר רק בזיכרון הדפדפן עד לרענון העמוד)
+    </div>
+    <div class="error-log-list" id="error-log-list"></div>
+    <button class="error-log-clear-btn" onclick="clearErrorLog()">נקה יומן</button>
+  </div>
+</div>
+
 <h1>המשחקים הבאים שלי</h1>
 
 <!-- Nav -->
@@ -1064,6 +1145,76 @@
 </div>
 
 <script>
+// ─── יומן שגיאות (23/09/2026, לבקשת ניר) ─────────────────────────────────
+// אוסף שגיאות מכל קריאות ה-API החיות בעמוד (כל widget "היום"/"אתמול"/"דאלאס השבוע"/
+// הכרטיסיות האישיות) לכפתור 🐞 קבוע בפינת המסך, כדי שאפשר יהיה לראות בעצמך שיש בעיה
+// בלי לחכות שמישהו ישים לב שריבוע מסוים ריק/שגוי. נשמר רק בזיכרון (לא ב-localStorage,
+// ראו CLAUDE.md - האתר לא משתמש באחסון דפדפן בכלל) ומתאפס ברענון העמוד.
+const APP_ERROR_LOG = [];
+const APP_ERROR_LOG_MAX = 50;
+
+function logAppError(context, err) {
+  const message = (err && err.message) ? err.message : String(err == null ? 'שגיאה לא ידועה' : err);
+  APP_ERROR_LOG.push({ time: new Date(), context: String(context || 'לא ידוע'), message });
+  if (APP_ERROR_LOG.length > APP_ERROR_LOG_MAX) APP_ERROR_LOG.shift();
+  updateErrorLogBadge();
+}
+
+function updateErrorLogBadge() {
+  const btn = document.getElementById('error-log-btn');
+  const badge = document.getElementById('error-log-badge');
+  if (!btn || !badge) return;
+  const n = APP_ERROR_LOG.length;
+  badge.textContent = n > 99 ? '99+' : String(n);
+  badge.classList.toggle('show', n > 0);
+  btn.classList.toggle('has-errors', n > 0);
+}
+
+function renderErrorLog() {
+  const list = document.getElementById('error-log-list');
+  if (!list) return;
+  if (!APP_ERROR_LOG.length) {
+    list.innerHTML = '<div class="error-log-empty">אין שגיאות רשומות כרגע 🎉</div>';
+    return;
+  }
+  list.innerHTML = APP_ERROR_LOG.slice().reverse().map(entry => {
+    const timeStr = entry.time.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return `<div class="error-log-entry">
+      <div class="error-log-entry-context">${escapeHtml(entry.context)}</div>
+      <div class="error-log-entry-time">${timeStr}</div>
+      <div class="error-log-entry-message">${escapeHtml(entry.message)}</div>
+    </div>`;
+  }).join('');
+}
+
+function openErrorLog() {
+  renderErrorLog();
+  document.getElementById('error-log-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeErrorLog(e, force) {
+  if (force || !e || e.target === document.getElementById('error-log-modal')) {
+    document.getElementById('error-log-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+function clearErrorLog() {
+  APP_ERROR_LOG.length = 0;
+  updateErrorLogBadge();
+  renderErrorLog();
+}
+
+// תופס גם שגיאות שלא נתפסו בשום try/catch (כמו הבאג של RACE_DURATION_HOURS ב-19/09/2026 -
+// עם היומן הזה, שגיאה כזו הייתה נראית מיד בכפתור 🐞 גם בלי לחכות לצילום מסך)
+window.addEventListener('error', ev => {
+  logAppError('שגיאה כללית (uncaught)', ev.error || ev.message);
+});
+window.addEventListener('unhandledrejection', ev => {
+  logAppError('Promise שנדחה בלי טיפול', ev.reason);
+});
+
 // כל פריט מגדיר: שם תצוגה, ספורט, ופונקציית fetch שמחזירה אובייקט { vs, tournament, date, time }
 // או throws אם אין מידע
 
@@ -1394,6 +1545,7 @@ async function buildCard(entry) {
     if (e.message === 'no_upcoming') {
       info.innerHTML = `<div class="status-empty">אין משחקים קרובים</div>`;
     } else {
+      logAppError(`כרטיסיה: ${entry.name}`, e);
       info.innerHTML = `<div class="status-error">שגיאה: ${e.message}</div>`;
     }
   }
@@ -1403,6 +1555,14 @@ entries.forEach(buildCard);
 
 // ─── Timezone: Texas (America/Chicago) ──────────────────────────────────
 const TX_TZ = 'America/Chicago';
+
+// משך משוער (שעות) לכל סוג מרוץ, כדי להציג "בשידור חי" ולא לקפוץ ישר ל"הסתיים"
+// ברגע ששעת ההתחלה עוברת - מרוץ יכול לקחת 1.5-4 שעות בפועל.
+// הוגדר כאן (ולא ליד makeRaceWidget) כי loadDailyNASCAR() נקרא מוקדם בסדר האתחול (שורה ~1569),
+// והיה נגרם "Cannot access before initialization" אם ה-const מוגדר אחרי נקודת הקריאה.
+const RACE_DURATION_HOURS = {
+  'nascar': 4, 'nascar-xfinity': 3.5, 'nascar-truck': 3, 'indycar': 3, 'motogp': 1.5,
+};
 
 function nowInTX() {
   // Returns a Date-like object adjusted to Texas local time
@@ -1504,6 +1664,7 @@ async function loadDailyNBA() {
       </div>`;
     }).join('');
   } catch (e) {
+    logAppError('loadDailyNBA', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NBA</div>';
   }
 }
@@ -1555,6 +1716,7 @@ async function loadDailyUCL() {
       </div>`;
     }).join('');
   } catch (e) {
+    logAppError('loadDailyUCL', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת ליגת האלופות</div>';
   }
 }
@@ -1614,6 +1776,7 @@ async function loadDailyNHL() {
       </div>`;
     }).join('');
   } catch (e) {
+    logAppError('loadDailyNHL', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NHL</div>';
   }
 }
@@ -1655,6 +1818,7 @@ async function loadDailyMLB() {
       </div>`;
     }).join('');
   } catch (e) {
+    logAppError('loadDailyMLB', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת MLB</div>';
   }
 }
@@ -1691,18 +1855,8 @@ async function loadDailyMLS() {
       </div>`;
     };
     if (!events.length) {
-      // אין משחקים היום - לנסות טווח שבוע קדימה ולהציג את הסבב הקרוב
-      const res2 = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${txDateString(0)}-${txDateString(7)}`);
-      const data2 = await res2.json();
-      const nowFallback = Date.now();
-      const ev2 = (data2.events || [])
-        .filter(e => {
-          const c = e.competitions?.[0] || {};
-          const completed = c.status?.type?.completed;
-          const inProgress = c.status?.type?.inProgress;
-          return inProgress || (!completed && new Date(e.date).getTime() > nowFallback);
-        })
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      // אין משחקים היום - מחפשים יום-אחר-יום עד שבוע קדימה (ראו fetchScoreboardUpcoming למעלה)
+      const ev2 = await fetchScoreboardUpcoming('soccer/usa.1', 7);
       if (!ev2.length) {
         el.innerHTML = '<div class="daily-empty">אין משחקי MLS קרובים</div>';
         return;
@@ -1712,6 +1866,7 @@ async function loadDailyMLS() {
     }
     el.innerHTML = events.slice(0, 8).map(makeRow).join('');
   } catch (e) {
+    logAppError('loadDailyMLS', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת MLS</div>';
   }
 }
@@ -1753,6 +1908,7 @@ async function loadYesterdayNBA() {
       </div>`;
     }).join('');
   } catch (e) {
+    logAppError('loadYesterdayNBA', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NBA</div>';
   }
 }
@@ -1792,6 +1948,7 @@ async function loadYesterdayUCL() {
       </div>`;
     }).join('');
   } catch (e) {
+    logAppError('loadYesterdayUCL', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת ליגת האלופות</div>';
   }
 }
@@ -1831,11 +1988,40 @@ async function loadYesterdayNFL() {
       </div>`;
     }).join('');
   } catch (e) {
+    logAppError('loadYesterdayNFL', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NFL</div>';
   }
 }
 
-// Fetch next NFL week games
+// עדכון 19/09/2026: התברר (מבדיקה חיה מול ESPN) שכמה מנקודות הקצה של ESPN (football/nfl,
+// football/college-football, soccer/usa.1) מחזירות שגיאת 400 על פרמטר טווח תאריכים
+// "dates=YYYYMMDD-YYYYMMDD" (בשונה מ-racing/f1 ששם זה כן עובד - כנראה תלוי בליגה) -
+// זה גרם להודעת "אין משחקים קרובים" שגויה כל אימת שהיום הנוכחי חסר משחק, למרות שיש
+// משחקים אמיתיים בימים הקרובים. הפתרון הכללי: לולאה יום-אחר-יום עם קריאת "dates=YYYYMMDD"
+// בודדת (מאומת שעובדת בכל הליגות), במקום טווח אחד שעלול להיכשל בשקט.
+async function fetchScoreboardUpcoming(sportSlug, maxDaysAhead = 10) {
+  const now = Date.now();
+  for (let offset = 1; offset <= maxDaysAhead; offset++) {
+    const dateStr = txDateString(offset);
+    let data;
+    try {
+      const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${sportSlug}/scoreboard?dates=${dateStr}`);
+      if (!res.ok) continue;
+      data = await res.json();
+    } catch { continue; }
+    const events = (data.events || [])
+      .filter(e => {
+        const c = e.competitions?.[0] || {};
+        const completed = c.status?.type?.completed;
+        const inProgress = c.status?.type?.inProgress;
+        return inProgress || (!completed && new Date(e.date).getTime() > now);
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (events.length) return events;
+  }
+  return [];
+}
+
 async function loadDailyNFL() {
   const el = document.getElementById('daily-nfl');
   try {
@@ -1845,21 +2031,8 @@ async function loadDailyNFL() {
     const data = await res.json();
     const events = data.events || [];
     if (!events.length) {
-      // Try upcoming schedule - ה-scoreboard בלי dates מחזיר רק את השבוע הנוכחי (יום א'-שבת),
-      // אז אם כל משחקי השבוע הזה כבר הסתיימו (למשל יום שלישי/רביעי, אחרי MNF ולפני המשחק הבא)
-      // הוא היה מחזיר ריק - וזה לא אומר "עונת הבין-עונות", רק שאין משחק היום-מחר. מבקשים
-      // טווח של 10 ימים קדימה כדי למצוא בפועל את המשחק הבא, גם אם הוא בשבוע הבא
-      const res2 = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${txDateString(0)}-${txDateString(10)}`);
-      const data2 = await res2.json();
-      const nowFallback = Date.now();
-      const ev2 = (data2.events || [])
-        .filter(e => {
-          const c = e.competitions?.[0] || {};
-          const completed = c.status?.type?.completed;
-          const inProgress = c.status?.type?.inProgress;
-          return inProgress || (!completed && new Date(e.date).getTime() > nowFallback);
-        })
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      // אין משחקים היום - מחפשים יום-אחר-יום עד 10 ימים קדימה (ראו fetchFootballScoreboardUpcoming למעלה)
+      const ev2 = await fetchScoreboardUpcoming('football/nfl', 10);
       if (!ev2.length) {
         el.innerHTML = '<div class="daily-empty">אין משחקי NFL קרובים בימים הקרובים</div>';
         return;
@@ -1915,6 +2088,7 @@ async function loadDailyNFL() {
     };
     el.innerHTML = events.slice(0, 6).map(makeNFLRow2).join('');
   } catch (e) {
+    logAppError('loadDailyNFL', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NFL</div>';
   }
 }
@@ -1988,19 +2162,27 @@ const DALLAS_TEAMS = [
       }))
   },
   // MLS - FC Dallas — scoreboard במקום schedule (schedule מחזיר 500)
-  { sport: 'football', label: '⚽ MLS', color: '#60a5fa', fn: () =>
-    fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${txDateString(0)}-${txDateString(7)}`)
-      .then(r => r.ok ? r.json() : {events:[]})
-      .catch(() => ({events:[]}))
-      .then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => {
-          const comp = e.competitions?.[0]||{};
-          const hasDallas = comp.competitors?.some(c => c.team?.id === '14879');
-          const t = new Date(e.date).getTime();
-          return hasDallas && t > now && t < week;
-        });
-      }).then(evs => evs.map(ev => {
+  // עדכון 19/09/2026: קריאת טווח "dates=X-Y" ל-soccer/usa.1 מחזירה 400 בפועל (אומת מול ESPN חי) -
+  // זה גרם לריבוע הזה להחזיר תמיד מערך ריק בשקט (r.ok=false -> {events:[]}), כך שמשחקי FC Dallas
+  // לא הוצגו מעולם מאז התיקון הקודם. הוחלף בלולאת יום-אחר-יום עם קריאות "dates=YYYYMMDD" בודדות שכן עובדות.
+  { sport: 'football', label: '⚽ MLS', color: '#60a5fa', fn: async () => {
+      const now = Date.now(), week = now + 7*86400000;
+      const allEvents = [];
+      for (let offset = 0; offset <= 7; offset++) {
+        try {
+          const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${txDateString(offset)}`);
+          if (!r.ok) continue;
+          const d = await r.json();
+          allEvents.push(...(d.events || []));
+        } catch {}
+      }
+      const evs = allEvents.filter(e => {
+        const comp = e.competitions?.[0]||{};
+        const hasDallas = comp.competitors?.some(c => c.team?.id === '14879');
+        const t = new Date(e.date).getTime();
+        return hasDallas && t > now && t < week;
+      });
+      return evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
         const away = comp.competitors?.find(c=>c.homeAway==='away');
@@ -2011,7 +2193,8 @@ const DALLAS_TEAMS = [
           tv: [{region:'ארה"ב',channel:'Apple TV+ / MLS Season Pass'}],
           sport:'football', league:'MLS', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
           completed:false };
-      }))
+      });
+    }
   },
   // ─── קולג' (NCAA) — פוטבול וכדורסל, SMU/TCU/North Texas ────────────────
   // פוטבול - SMU Mustangs (ESPN team id 2567)
@@ -2143,8 +2326,11 @@ async function loadDallasWeek() {
   const results = await Promise.allSettled(DALLAS_TEAMS.map(t => t.fn()));
   const allCards = [];
   results.forEach((res, i) => {
-    if (res.status !== 'fulfilled') return;
     const team = DALLAS_TEAMS[i];
+    if (res.status !== 'fulfilled') {
+      logAppError(`דאלאס השבוע: ${team.label}`, res.reason);
+      return;
+    }
     res.value.forEach(ev => allCards.push({ ...ev, label: team.label, color: team.color }));
   });
 
@@ -2516,11 +2702,6 @@ function renderMonthGames() {
 }
 
 // ─── NASCAR Cup Series ─────────────────────────────
-// משך משוער (שעות) לכל סוג מרוץ, כדי להציג "בשידור חי" ולא לקפוץ ישר ל"הסתיים"
-// ברגע ששעת ההתחלה עוברת - מרוץ יכול לקחת 1.5-4 שעות בפועל.
-const RACE_DURATION_HOURS = {
-  'nascar': 4, 'nascar-xfinity': 3.5, 'nascar-truck': 3, 'indycar': 3, 'motogp': 1.5,
-};
 // ─── Helper לכל סדרות המרוץ ─────────────────────────────
 function makeRaceWidget(elId, schedule, sport, league, color, nextSeasonNote) {
   const el = document.getElementById(elId);
@@ -2767,6 +2948,7 @@ async function loadDailyNASCAR() {
       </div>`;
 
   } catch(e) {
+    logAppError('loadDailyNASCAR (Cup Series)', e);
     el.innerHTML = `<div class="daily-empty">שגיאה: ${e.message}</div>`;
   }
 }
@@ -2807,6 +2989,7 @@ async function loadDailyF1() {
       <div class="daily-game-time">⏰ ${status}</div>
     </div>`;
   } catch (e) {
+    logAppError('loadDailyF1', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת F1</div>';
   }
 }
@@ -2821,17 +3004,8 @@ async function loadDailyNCAAF() {
     const data = await res.json();
     const events = data.events || [];
     if (!events.length) {
-      const res2 = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=${txDateString(0)}-${txDateString(10)}`);
-      const data2 = await res2.json();
-      const nowFallback = Date.now();
-      const ev2 = (data2.events || [])
-        .filter(e => {
-          const c = e.competitions?.[0] || {};
-          const completed = c.status?.type?.completed;
-          const inProgress = c.status?.type?.inProgress;
-          return inProgress || (!completed && new Date(e.date).getTime() > nowFallback);
-        })
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      // אין משחקים היום - מחפשים יום-אחר-יום עד 10 ימים קדימה (ראו fetchFootballScoreboardUpcoming למעלה)
+      const ev2 = await fetchScoreboardUpcoming('football/college-football', 10);
       if (!ev2.length) {
         el.innerHTML = '<div class="daily-empty">אין משחקי פוטבול מכללות קרובים בימים הקרובים</div>';
         return;
@@ -2887,6 +3061,7 @@ async function loadDailyNCAAF() {
     };
     el.innerHTML = events.slice(0, 6).map(makeRow2).join('');
   } catch (e) {
+    logAppError('loadDailyNCAAF', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת פוטבול מכללות</div>';
   }
 }
@@ -2927,6 +3102,7 @@ async function loadDailyNCAAB() {
       </div>`;
     }).join('');
   } catch (e) {
+    logAppError('loadDailyNCAAB', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת כדורסל מכללות</div>';
   }
 }
