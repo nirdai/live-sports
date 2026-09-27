@@ -863,6 +863,16 @@
       color: #8a8fa8;
       margin-bottom: 20px;
     }
+    /* עדכון 27/09/2026 (ביוזמת ניר: "כיסוי דאלאס דל... בלי אינדיקציה שהרשימה חלקית") -
+       שורה שקופה שמראה אילו קבוצות נבדקו ואין להן משחק בית בטווח, במקום שהן ייעלמו בשקט */
+    .dallas-missing-note {
+      grid-column: 1 / -1;
+      font-size: 0.78rem;
+      color: #6b7086;
+      padding: 10px 2px 2px;
+      border-top: 1px dashed #2a2d3e;
+      margin-top: 6px;
+    }
     .dallas-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -900,6 +910,21 @@
       gap: 6px;
       margin-bottom: 4px;
     }
+
+    /* ─── פוטר (27/09/2026, לבקשת ניר: "אין פוטר/אודות/מקורות נתונים") ─── */
+    .site-footer {
+      max-width: 1100px;
+      margin: 40px auto 0;
+      padding: 16px 4px 4px;
+      border-top: 1px solid #2a2d3e;
+      color: #8a8fa8;
+      font-size: 0.8rem;
+      text-align: center;
+      line-height: 1.7;
+    }
+    .site-footer a { color: #8a8fa8; text-decoration: underline; }
+    .site-footer a:hover { color: #e8e8e8; }
+    .site-footer .footer-updated { color: #6b7086; margin-top: 4px; }
 
     /* ─── Mobile Responsive ─── */
     @media (max-width: 600px) {
@@ -1084,8 +1109,8 @@
 
 <!-- Dallas This Week -->
 <div class="dallas-summary">
-  <div class="dallas-header">📍 דאלאס, טקסס — השבוע</div>
-  <div class="dallas-sub" id="dallas-week-label">משחקים ואירועי ספורט בדאלאס השבוע</div>
+  <div class="dallas-header">📍 דאלאס, טקסס — בימים הקרובים</div>
+  <div class="dallas-sub" id="dallas-week-label">משחקים ואירועי ספורט בדאלאס בעשרת הימים הקרובים</div>
   <div class="dallas-grid" id="dallas-grid"><div class="daily-loading">טוען...</div></div>
 </div>
 
@@ -1143,6 +1168,28 @@
   </div>
   <div id="month-container"></div>
 </div>
+
+<!-- פוטר גלובלי (27/09/2026, לבקשת ניר: "אין פוטר/אודות/מקורות נתונים") - מחוץ לכל דפי ה-tab, מוצג תמיד -->
+<div class="site-footer">
+  <div>⚽🏀🏈 "המשחקים הבאים שלי" — פורטל ספורט אישי, ממוקד דאלאס-פורט וורת', טקסס</div>
+  <div>מקורות נתונים חיים: <a href="https://www.espn.com/" target="_blank" rel="noopener noreferrer">ESPN</a> ו-<a href="https://www.365scores.com/" target="_blank" rel="noopener noreferrer">365scores</a></div>
+  <div class="footer-updated">עודכן לאחרונה בטעינת העמוד: <span id="footer-updated-time">—</span></div>
+</div>
+
+<script>
+// עדכון 27/09/2026 (לבקשת ניר: "אין חותמת עודכן... להוסיף תאריך עדכון מפורש"):
+// האתר לא מרענן את עצמו אוטומטית (אין setInterval) - כל קריאות ה-API יורות פעם אחת
+// בטעינת העמוד. לכן "עודכן לאחרונה" הוא בפועל זמן טעינת העמוד, מוצג בשעון המכשיר של הצופה.
+(function() {
+  const el = document.getElementById('footer-updated-time');
+  if (el) {
+    el.textContent = new Date().toLocaleString('he-IL', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      day: 'numeric', month: 'numeric'
+    });
+  }
+})();
+</script>
 
 <script>
 // ─── יומן שגיאות (23/09/2026, לבקשת ניר) ─────────────────────────────────
@@ -1831,7 +1878,6 @@ async function loadDailyMLS() {
     const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${dateStr}`);
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
-    const events = data.events || [];
     const makeRow = ev => {
       const comp = ev.competitions?.[0] || {};
       const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
@@ -1854,17 +1900,20 @@ async function loadDailyMLS() {
         <div class="daily-game-time">${status}</div>
       </div>`;
     };
-    if (!events.length) {
-      // אין משחקים היום - מחפשים יום-אחר-יום עד שבוע קדימה (ראו fetchScoreboardUpcoming למעלה)
+    // עדכון 27/09/2026: מסננים משחקים גמורים וממיינים כרונולוגית - ריבוע "הבא" לא אמור
+    // להציג משחק שכבר הסתיים היום כאילו הוא "המשחק הבא" (ראו pickUpcomingEvents למעלה).
+    const upcoming = pickUpcomingEvents(data.events);
+    if (!upcoming.length) {
+      // אין משחקים חיים/עתידיים היום - מחפשים יום-אחר-יום עד שבוע קדימה
       const ev2 = await fetchScoreboardUpcoming('soccer/usa.1', 7);
       if (!ev2.length) {
         el.innerHTML = '<div class="daily-empty">אין משחקי MLS קרובים</div>';
         return;
       }
-      el.innerHTML = ev2.slice(0, 8).map(makeRow).join('');
+      el.innerHTML = ev2.slice(0, 8).map(makeRow).join('') + moreGamesNote(ev2.length, Math.min(8, ev2.length));
       return;
     }
-    el.innerHTML = events.slice(0, 8).map(makeRow).join('');
+    el.innerHTML = upcoming.slice(0, 8).map(makeRow).join('') + moreGamesNote(upcoming.length, Math.min(8, upcoming.length));
   } catch (e) {
     logAppError('loadDailyMLS', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת MLS</div>';
@@ -2022,6 +2071,56 @@ async function fetchScoreboardUpcoming(sportSlug, maxDaysAhead = 10) {
   return [];
 }
 
+// עדכון 27/09/2026 (ביוזמת ניר): ריבועי "הבא" (NFL/NCAAF/MLS וכו') הציגו משחקים שכבר
+// הסתיימו היום כאילו הם "המשחק הבא" (למשל משחק 19:30 שלא סומן כגמור ב-21:36) - כי ענף
+// ה-"today" של הפונקציות האלה הציג את כל אירועי היום כמו שהם, בלי סינון/מיון לפי סטטוס.
+// פתרון: פונקציה משותפת שמסננת אירועים גמורים ומשאירה רק "חי"/עתידי, וממיינת כרונולוגית -
+// באותה לוגיקה בדיוק כמו fetchScoreboardUpcoming, כדי שהתנהגות "היום" ו"ימים הבאים" תהיה עקבית.
+function pickUpcomingEvents(events) {
+  const now = Date.now();
+  return (events || [])
+    .filter(e => {
+      const c = e.competitions?.[0] || {};
+      const completed = c.status?.type?.completed;
+      const inProgress = c.status?.type?.inProgress;
+      return inProgress || (!completed && new Date(e.date).getTime() > now);
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+// עדכון 27/09/2026 (ביוזמת ניר: "מוצגים רק 6 מתוך ~13 משחקי שבוע 4 בלי אינדיקציה שהרשימה
+// חלקית") - שורה קטנה ושקופה שמראה שהרשימה נחתכה, כשיש עוד משחקים מעבר למה שמוצג בפועל.
+function moreGamesNote(totalCount, shownCount) {
+  const remaining = totalCount - shownCount;
+  return remaining > 0
+    ? `<div class="daily-empty" style="padding-top:4px">+ עוד ${remaining} משחקים לא מוצגים</div>`
+    : '';
+}
+
+function makeNFLRow(ev) {
+  const comp = ev.competitions?.[0] || {};
+  const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+  const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+  const home = homeTeam?.team?.abbreviation || '?';
+  const away = awayTeam?.team?.abbreviation || '?';
+  const time = formatGameDateTime(ev.date);
+  const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+  const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
+  const modalData = {
+    sport: 'nfl', league: 'NFL',
+    home: homeTeam?.team?.displayName || home,
+    away: awayTeam?.team?.displayName || away,
+    date: ev.date, tv: [], detail: note || 'NFL',
+    homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+    completed: !!comp.status?.type?.completed
+  };
+  const encoded = encodeModalData(modalData);
+  return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+    <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
+    <div class="daily-game-time">${status}</div>
+  </div>`;
+}
+
 async function loadDailyNFL() {
   const el = document.getElementById('daily-nfl');
   try {
@@ -2029,64 +2128,20 @@ async function loadDailyNFL() {
     const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`);
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
-    const events = data.events || [];
-    if (!events.length) {
-      // אין משחקים היום - מחפשים יום-אחר-יום עד 10 ימים קדימה (ראו fetchFootballScoreboardUpcoming למעלה)
+    // עדכון 27/09/2026: מסננים משחקים גמורים וממיינים כרונולוגית - ריבוע "הבא" לא אמור
+    // להציג משחק שכבר הסתיים היום כאילו הוא "המשחק הבא" (ראו pickUpcomingEvents למעלה).
+    const upcoming = pickUpcomingEvents(data.events);
+    if (!upcoming.length) {
+      // אין משחקים חיים/עתידיים היום - מחפשים יום-אחר-יום עד 10 ימים קדימה
       const ev2 = await fetchScoreboardUpcoming('football/nfl', 10);
       if (!ev2.length) {
         el.innerHTML = '<div class="daily-empty">אין משחקי NFL קרובים בימים הקרובים</div>';
         return;
       }
-      const makeNFLRow = ev => {
-        const comp = ev.competitions?.[0] || {};
-        const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
-        const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
-        const home = homeTeam?.team?.abbreviation || '?';
-        const away = awayTeam?.team?.abbreviation || '?';
-        const time = formatGameDateTime(ev.date);
-        const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
-        const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
-        const modalData = {
-          sport: 'nfl', league: 'NFL',
-          home: homeTeam?.team?.displayName || home,
-          away: awayTeam?.team?.displayName || away,
-          date: ev.date, tv: [], detail: note || 'NFL',
-          homeScore: homeTeam?.score, awayScore: awayTeam?.score,
-          completed: !!comp.status?.type?.completed
-        };
-        const encoded = encodeModalData(modalData);
-        return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-          <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
-          <div class="daily-game-time">${status}</div>
-        </div>`;
-      };
-      el.innerHTML = ev2.slice(0, 6).map(makeNFLRow).join('');
+      el.innerHTML = ev2.slice(0, 6).map(makeNFLRow).join('') + moreGamesNote(ev2.length, Math.min(6, ev2.length));
       return;
     }
-    const makeNFLRow2 = ev => {
-      const comp = ev.competitions?.[0] || {};
-      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
-      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
-      const home = homeTeam?.team?.abbreviation || '?';
-      const away = awayTeam?.team?.abbreviation || '?';
-      const time = formatGameDateTime(ev.date);
-      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
-      const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
-      const modalData = {
-        sport: 'nfl', league: 'NFL',
-        home: homeTeam?.team?.displayName || home,
-        away: awayTeam?.team?.displayName || away,
-        date: ev.date, tv: [], detail: note || 'NFL',
-        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
-        completed: !!comp.status?.type?.completed
-      };
-      const encoded = encodeModalData(modalData);
-      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
-        <div class="daily-game-time">${status}</div>
-      </div>`;
-    };
-    el.innerHTML = events.slice(0, 6).map(makeNFLRow2).join('');
+    el.innerHTML = upcoming.slice(0, 6).map(makeNFLRow).join('') + moreGamesNote(upcoming.length, Math.min(6, upcoming.length));
   } catch (e) {
     logAppError('loadDailyNFL', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NFL</div>';
@@ -2095,18 +2150,31 @@ async function loadDailyNFL() {
 
 // ─── Modal logic ─────────────────────────────────────────────────────────
 // ─── Dallas This Week ────────────────────────────────────────────────────
+// עדכון 27/09/2026 (ביוזמת ניר): "דאלאס השבוע" הציג משחקי חוץ ("UNT @ Tulsa") ואפילו משחק
+// בית "רשמי" שמתקיים במקום אחר לגמרי (Dallas Cowboys מול Baltimore Ravens - ה-API מציג את
+// דאלאס כ-home, אבל זה משחק NFL International Series אמיתי שמתקיים ב-Rio de Janeiro,
+// בריו דה ז'ניירו, אצטדיון Maracanã - אומת מול ה-API החי של ESPN, כולל שדה comp.neutralSite:true
+// שקיים בדיוק בשביל המקרה הזה). הפילטרים הקודמים בדקו רק טווח תאריכים, לא אם זה באמת משחק
+// בית בזירה האמיתית של הקבוצה. פתרון: פונקציה משותפת שבודקת גם home-team-id וגם neutralSite.
+function isRealHomeGame(comp, teamId) {
+  const homeComp = comp.competitors?.find(c => c.homeAway === 'home');
+  return homeComp?.team?.id === teamId && !comp.neutralSite;
+}
+
 const DALLAS_TEAMS = [
   // NBA - Dallas Mavericks (ID 6)
   { sport: 'basketball', label: '🏀 NBA', color: '#f97316', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/6/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '6');
+        });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
         const away = comp.competitors?.find(c=>c.homeAway==='away');
-        const isHome = home?.team?.id === '6';
         const venue = comp.venue;
         const venueName = venue?.fullName || venue?.shortName || 'American Airlines Center';
         const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Dallas, TX';
@@ -2116,18 +2184,39 @@ const DALLAS_TEAMS = [
           completed:false };
       }))
   },
+  // NHL - Dallas Stars (ID 9) — עדכון 27/09/2026 (ביוזמת ניר: "אין Mavericks/Stars/Rangers/FC
+  // Dallas" ב"דאלאס השבוע"): הסתבר שהקבוצה הזו לא הייתה קיימת ב-DALLAS_TEAMS בכלל - לא עניין
+  // של "אין משחק השבוע", אלא שהיא פשוט מעולם לא נבדקה. נוסף עכשיו לפי אותו דפוס בדיוק כמו Mavericks.
+  { sport: 'hockey', label: '🏒 NHL', color: '#22d3ee', fn: () =>
+    fetch(`https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/9/schedule?fixture=true`)
+      .then(r => r.json()).then(d => {
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '9');
+        });
+      }).then(evs => evs.map(ev => {
+        const comp = ev.competitions?.[0]||{};
+        const home = comp.competitors?.find(c=>c.homeAway==='home');
+        const away = comp.competitors?.find(c=>c.homeAway==='away');
+        const venue = comp.venue;
+        const venueName = venue?.fullName || venue?.shortName || 'American Airlines Center';
+        const venueCity = [venue?.address?.city, venue?.address?.state].filter(Boolean).join(', ') || 'Dallas, TX';
+        return { title: `${away?.team?.shortDisplayName||'?'} @ ${home?.team?.shortDisplayName||'?'}`, detail: venueName, city: venueCity, date: ev.date,
+          tv: [{region:'ארה"ב',channel:'ESPN / TNT'}],
+          sport:'hockey', league:'NHL', home:home?.team?.displayName||'?', away:away?.team?.displayName||'?',
+          completed:false };
+      }))
+  },
   // MLB - Texas Rangers (ID 13) — HOME games only
   { sport: 'baseball', label: '⚾ MLB', color: '#a78bfa', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/13/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
+        const now = Date.now(), week = now + 10*86400000;
         return (d.events||[]).filter(e => {
           const t = new Date(e.date).getTime();
           if (t <= now || t >= week) return false;
-          // Only home games
-          const comp = e.competitions?.[0]||{};
-          const rangers = comp.competitors?.find(c => c.team?.id === '13');
-          return rangers?.homeAway === 'home';
+          return isRealHomeGame(e.competitions?.[0]||{}, '13');
         });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
@@ -2146,8 +2235,11 @@ const DALLAS_TEAMS = [
   { sport: 'nfl', label: '🏈 NFL', color: '#ef4444', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/6/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '6');
+        });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
@@ -2166,9 +2258,9 @@ const DALLAS_TEAMS = [
   // זה גרם לריבוע הזה להחזיר תמיד מערך ריק בשקט (r.ok=false -> {events:[]}), כך שמשחקי FC Dallas
   // לא הוצגו מעולם מאז התיקון הקודם. הוחלף בלולאת יום-אחר-יום עם קריאות "dates=YYYYMMDD" בודדות שכן עובדות.
   { sport: 'football', label: '⚽ MLS', color: '#60a5fa', fn: async () => {
-      const now = Date.now(), week = now + 7*86400000;
+      const now = Date.now(), week = now + 10*86400000;
       const allEvents = [];
-      for (let offset = 0; offset <= 7; offset++) {
+      for (let offset = 0; offset <= 10; offset++) {
         try {
           const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${txDateString(offset)}`);
           if (!r.ok) continue;
@@ -2178,9 +2270,8 @@ const DALLAS_TEAMS = [
       }
       const evs = allEvents.filter(e => {
         const comp = e.competitions?.[0]||{};
-        const hasDallas = comp.competitors?.some(c => c.team?.id === '14879');
         const t = new Date(e.date).getTime();
-        return hasDallas && t > now && t < week;
+        return t > now && t < week && isRealHomeGame(comp, '14879');
       });
       return evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
@@ -2201,8 +2292,11 @@ const DALLAS_TEAMS = [
   { sport: 'football', label: "🎓 SMU פוטבול", color: '#a855f7', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/2567/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '2567');
+        });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
@@ -2220,8 +2314,11 @@ const DALLAS_TEAMS = [
   { sport: 'football', label: "🎓 TCU פוטבול", color: '#a855f7', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/2628/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '2628');
+        });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
@@ -2239,8 +2336,11 @@ const DALLAS_TEAMS = [
   { sport: 'football', label: "🎓 UNT פוטבול", color: '#a855f7', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/249/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '249');
+        });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
@@ -2258,8 +2358,11 @@ const DALLAS_TEAMS = [
   { sport: 'basketball', label: "🎓 SMU כדורסל", color: '#a855f7', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/2567/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '2567');
+        });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
@@ -2277,8 +2380,11 @@ const DALLAS_TEAMS = [
   { sport: 'basketball', label: "🎓 TCU כדורסל", color: '#a855f7', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/2628/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '2628');
+        });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
@@ -2296,8 +2402,11 @@ const DALLAS_TEAMS = [
   { sport: 'basketball', label: "🎓 UNT כדורסל", color: '#a855f7', fn: () =>
     fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/249/schedule?fixture=true`)
       .then(r => r.json()).then(d => {
-        const now = Date.now(), week = now + 7*86400000;
-        return (d.events||[]).filter(e => { const t=new Date(e.date).getTime(); return t>now && t<week; });
+        const now = Date.now(), week = now + 10*86400000;
+        return (d.events||[]).filter(e => {
+          const t=new Date(e.date).getTime();
+          return t>now && t<week && isRealHomeGame(e.competitions?.[0]||{}, '249');
+        });
       }).then(evs => evs.map(ev => {
         const comp = ev.competitions?.[0]||{};
         const home = comp.competitors?.find(c=>c.homeAway==='home');
@@ -2319,16 +2428,24 @@ async function loadDallasWeek() {
   const txNow = nowInTX();
   const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   const weekEnd = new Date(txNow);
-  weekEnd.setDate(weekEnd.getDate() + 7);
+  weekEnd.setDate(weekEnd.getDate() + 10);
   document.getElementById('dallas-week-label').textContent =
     `${txNow.getDate()} ב${months[txNow.getMonth()]} — ${weekEnd.getDate()} ב${months[weekEnd.getMonth()]} · אירועי ספורט בדאלאס`;
 
   const results = await Promise.allSettled(DALLAS_TEAMS.map(t => t.fn()));
   const allCards = [];
+  // עדכון 27/09/2026: מעקב אחר קבוצות שנבדקו ולא נמצא להן משחק בית בטווח - כדי להראות
+  // בשקיפות "נבדק ואין" במקום שהקבוצה פשוט תיעלם בלי שום סימן (ראו dallas-missing-note למטה).
+  const missingTeams = [];
   results.forEach((res, i) => {
     const team = DALLAS_TEAMS[i];
     if (res.status !== 'fulfilled') {
-      logAppError(`דאלאס השבוע: ${team.label}`, res.reason);
+      logAppError(`דאלאס בימים הקרובים: ${team.label}`, res.reason);
+      missingTeams.push(team.label);
+      return;
+    }
+    if (!res.value.length) {
+      missingTeams.push(team.label);
       return;
     }
     res.value.forEach(ev => allCards.push({ ...ev, label: team.label, color: team.color }));
@@ -2336,8 +2453,12 @@ async function loadDallasWeek() {
 
   allCards.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  const missingNote = missingTeams.length
+    ? `<div class="dallas-missing-note">נבדקו ואין להן משחק בית בטווח הזה: ${missingTeams.map(escapeHtml).join(', ')}</div>`
+    : '';
+
   if (!allCards.length) {
-    grid.innerHTML = '<div class="daily-empty" style="padding:16px">לא נמצאו אירועי ספורט בדאלאס השבוע</div>';
+    grid.innerHTML = '<div class="daily-empty" style="padding:16px">לא נמצאו אירועי ספורט בדאלאס בימים הקרובים</div>' + missingNote;
     return;
   }
 
@@ -2366,7 +2487,7 @@ async function loadDallasWeek() {
       <div class="dallas-card-detail">🏟️ ${escapeHtml(ev.detail)}</div>
       ${ev.city ? `<div class="dallas-card-detail">📍 ${escapeHtml(ev.city)}</div>` : ''}
     </div>`;
-  }).join('');
+  }).join('') + missingNote;
 }
 
 loadDallasWeek();
@@ -2835,7 +2956,7 @@ const MOTOGP_2026 = [
 
 function loadDailyNASCARXfinity() { makeRaceWidget('daily-nascar-xfinity', XFINITY_2026, 'nascar-xfinity', "NASCAR O'Reilly Series", '#22d3ee'); }
 function loadDailyNASCARTruck()   { makeRaceWidget('daily-nascar-truck',   TRUCK_2026,   'nascar-truck',   'NASCAR Truck Series',   '#84cc16'); }
-function loadDailyIndyCar()       { makeRaceWidget('daily-indycar',        INDYCAR_2026, 'indycar',        'IndyCar Series',        '#c084fc', 'עונת 2026 הסתיימה ב-6/9 (מונטריי) · 2027 מתחילה ב-7/3/2027 (סנט פיטרסבורג, פלורידה)'); }
+function loadDailyIndyCar()       { makeRaceWidget('daily-indycar',        INDYCAR_2026, 'indycar',        'IndyCar Series',        '#c084fc', 'עונת 2026 הסתיימה ב-6 בספטמבר (מונטריי) · 2027 מתחילה ב-7 במרץ 2027 (סנט פיטרסבורג, פלורידה)'); }
 function loadDailyMotoGP()        { makeRaceWidget('daily-motogp',         MOTOGP_2026,  'motogp',         'MotoGP World Championship', '#f43f5e'); }
 
 // עדכון פרטי ספורט לסדרות החדשות
@@ -2963,25 +3084,36 @@ async function loadDailyF1() {
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
     const now = Date.now();
-    // Find next event
-    const events = (data.events || []).filter(e => new Date(e.date).getTime() > now - 86400000)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-    if (!events.length) {
+    // עדכון 27/09/2026 (ביוזמת ניר, "כרטיס F1 מוצג ביום חמישי - מוזר"): כל event ב-API הזה
+    // הוא סוף-שבוע מרוץ שלם עם כמה sessions בתוך competitions[] (FP1/FP2/FP3/Qualifying/Race).
+    // אומת מול ה-API החי: ev.date וגם competitions[0] הם תמיד ה-FP1 (אימון ראשון בחמישי/שישי),
+    // לא המרוץ עצמו - זה גרם להצגת "Bahrain Grand Prix" עם תאריך/שעה של אימון במקום המרוץ שביום
+    // ראשון בפועל. תוקן: מאתרים את ה-competition שבו type.abbreviation === 'Race' ומשתמשים בתאריך
+    // ובסטטוס שלו. גם venue תוקן: comp.venue לא קיים כלל במבנה הזה (תמיד היה ריק בשקט) - הוא
+    // נמצא ב-ev.circuit ברמת ה-event, לא בכל competition.
+    const withRace = (data.events || []).map(ev => {
+      const raceComp = ev.competitions?.find(c => c.type?.abbreviation === 'Race')
+        || ev.competitions?.[ev.competitions.length - 1] || {};
+      return { ev, raceComp };
+    });
+    const upcoming = withRace
+      .filter(({ raceComp }) => new Date(raceComp.date).getTime() > now - 86400000)
+      .sort((a, b) => new Date(a.raceComp.date) - new Date(b.raceComp.date));
+    if (!upcoming.length) {
       el.innerHTML = '<div class="daily-empty">אין מירוץ F1 קרוב</div>';
       return;
     }
-    const ev = events[0];
-    const comp = ev.competitions?.[0] || {};
+    const { ev, raceComp } = upcoming[0];
     const raceName = ev.name || ev.shortName || 'Grand Prix';
-    const circuit = comp.venue?.fullName || comp.venue?.shortName || '';
-    const dateStr = formatTimeHe(ev.date);
+    const circuit = ev.circuit?.fullName || ev.circuit?.shortName || '';
+    const dateStr = formatTimeHe(raceComp.date);
     const fullDate = (() => {
-      const d = new Date(ev.date);
+      const d = new Date(raceComp.date);
       if (isNaN(d)) return '';
       return d.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short', timeZone: TX_TZ });
     })();
-    const status = comp.status?.type?.completed ? '(סיום)'
-      : comp.status?.type?.inProgress ? '🔴 חי'
+    const status = raceComp.status?.type?.completed ? '(סיום)'
+      : raceComp.status?.type?.inProgress ? '🔴 חי'
       : `${fullDate} ${dateStr}`;
     el.innerHTML = `<div class="daily-game" style="flex-direction:column;align-items:flex-start;gap:4px;">
       <div class="daily-game-teams">${escapeHtml(raceName)}</div>
@@ -2995,6 +3127,30 @@ async function loadDailyF1() {
 }
 
 // ─── פוטבול מכללות (NCAAF) — ארצי, אותו דפוס בדיוק כמו NFL ──────────────
+function makeNCAAFRow(ev) {
+  const comp = ev.competitions?.[0] || {};
+  const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+  const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+  const home = homeTeam?.team?.abbreviation || '?';
+  const away = awayTeam?.team?.abbreviation || '?';
+  const time = formatGameDateTime(ev.date);
+  const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+  const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
+  const modalData = {
+    sport: 'football', league: 'NCAAF',
+    home: homeTeam?.team?.displayName || home,
+    away: awayTeam?.team?.displayName || away,
+    date: ev.date, tv: [], detail: note || 'NCAAF',
+    homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+    completed: !!comp.status?.type?.completed
+  };
+  const encoded = encodeModalData(modalData);
+  return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+    <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
+    <div class="daily-game-time">${status}</div>
+  </div>`;
+}
+
 async function loadDailyNCAAF() {
   const el = document.getElementById('daily-ncaaf');
   try {
@@ -3002,64 +3158,20 @@ async function loadDailyNCAAF() {
     const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=${dateStr}`);
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
-    const events = data.events || [];
-    if (!events.length) {
-      // אין משחקים היום - מחפשים יום-אחר-יום עד 10 ימים קדימה (ראו fetchFootballScoreboardUpcoming למעלה)
+    // עדכון 27/09/2026: מסננים משחקים גמורים וממיינים כרונולוגית - ריבוע "הבא" לא אמור
+    // להציג משחק שכבר הסתיים היום כאילו הוא "המשחק הבא" (ראו pickUpcomingEvents למעלה).
+    const upcoming = pickUpcomingEvents(data.events);
+    if (!upcoming.length) {
+      // אין משחקים חיים/עתידיים היום - מחפשים יום-אחר-יום עד 10 ימים קדימה
       const ev2 = await fetchScoreboardUpcoming('football/college-football', 10);
       if (!ev2.length) {
         el.innerHTML = '<div class="daily-empty">אין משחקי פוטבול מכללות קרובים בימים הקרובים</div>';
         return;
       }
-      const makeRow = ev => {
-        const comp = ev.competitions?.[0] || {};
-        const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
-        const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
-        const home = homeTeam?.team?.abbreviation || '?';
-        const away = awayTeam?.team?.abbreviation || '?';
-        const time = formatGameDateTime(ev.date);
-        const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
-        const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
-        const modalData = {
-          sport: 'football', league: 'NCAAF',
-          home: homeTeam?.team?.displayName || home,
-          away: awayTeam?.team?.displayName || away,
-          date: ev.date, tv: [], detail: note || 'NCAAF',
-          homeScore: homeTeam?.score, awayScore: awayTeam?.score,
-          completed: !!comp.status?.type?.completed
-        };
-        const encoded = encodeModalData(modalData);
-        return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-          <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
-          <div class="daily-game-time">${status}</div>
-        </div>`;
-      };
-      el.innerHTML = ev2.slice(0, 6).map(makeRow).join('');
+      el.innerHTML = ev2.slice(0, 6).map(makeNCAAFRow).join('') + moreGamesNote(ev2.length, Math.min(6, ev2.length));
       return;
     }
-    const makeRow2 = ev => {
-      const comp = ev.competitions?.[0] || {};
-      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
-      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
-      const home = homeTeam?.team?.abbreviation || '?';
-      const away = awayTeam?.team?.abbreviation || '?';
-      const time = formatGameDateTime(ev.date);
-      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
-      const note = comp.notes?.find(n => n.type === 'event')?.headline || '';
-      const modalData = {
-        sport: 'football', league: 'NCAAF',
-        home: homeTeam?.team?.displayName || home,
-        away: awayTeam?.team?.displayName || away,
-        date: ev.date, tv: [], detail: note || 'NCAAF',
-        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
-        completed: !!comp.status?.type?.completed
-      };
-      const encoded = encodeModalData(modalData);
-      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
-        <div class="daily-game-time">${status}</div>
-      </div>`;
-    };
-    el.innerHTML = events.slice(0, 6).map(makeRow2).join('');
+    el.innerHTML = upcoming.slice(0, 6).map(makeNCAAFRow).join('') + moreGamesNote(upcoming.length, Math.min(6, upcoming.length));
   } catch (e) {
     logAppError('loadDailyNCAAF', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת פוטבול מכללות</div>';
