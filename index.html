@@ -1039,7 +1039,7 @@
   <div class="daily-date" id="daily-date">📅 <span id="daily-date-text">טוען תאריך...</span></div>
   <div class="daily-sections">
     <div class="daily-section nba">
-      <div class="daily-section-title">🏀 NBA — היום</div>
+      <div class="daily-section-title">🏀 NBA — היום / הבא</div>
       <div id="daily-nba"><div class="daily-loading">טוען...</div></div>
     </div>
     <div class="daily-section ucl">
@@ -1680,6 +1680,41 @@ function formatDateTX(dateStr) {
 })();
 
 // Fetch all NBA games today
+function makeNBARow(ev) {
+  const comp = ev.competitions?.[0] || {};
+  const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+  const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
+  const home = homeTeam?.team?.abbreviation || '?';
+  const away = awayTeam?.team?.abbreviation || '?';
+  const time = formatGameDateTime(ev.date);
+  const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
+  const nbaTV = [
+    { region: 'ישראל', channel: 'ספורט 5' },
+    { region: 'ארה"ב', channel: 'ESPN / ABC / TNT / Prime Video' },
+  ];
+  const seriesSummary = comp.series?.summary
+    || comp.notes?.find(n => n.type === 'event')?.headline
+    || null;
+  const modalData = {
+    sport: 'basketball', league: 'NBA',
+    home: homeTeam?.team?.displayName || home,
+    away: awayTeam?.team?.displayName || away,
+    date: ev.date, tv: nbaTV, detail: 'NBA',
+    series: seriesSummary,
+    homeScore: homeTeam?.score, awayScore: awayTeam?.score,
+    completed: !!comp.status?.type?.completed
+  };
+  const encoded = encodeModalData(modalData);
+  return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
+    <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
+    <div class="daily-game-time">${status}</div>
+  </div>`;
+}
+
+// עדכון 28/09/2026 (ביוזמת ניר: "סקשן NBA עדיין בלי משחק הבא") - בניגוד ל-NFL/NCAAF/MLS,
+// הריבוע הזה הציג רק משחקי "היום" ממש, בלי נפילה למשחק הבא כשאין משחק היום (וזה המצב הנוכחי,
+// כי עונת ה-NBA טרם התחילה) - "אין משחקי NBA היום" נשאר תקוע במקום להראות מתי המשחק הבא בפועל.
+// פתרון: אותו דפוס בדיוק כמו loadDailyNFL - pickUpcomingEvents + נפילה ל-fetchScoreboardUpcoming.
 async function loadDailyNBA() {
   const el = document.getElementById('daily-nba');
   try {
@@ -1687,41 +1722,17 @@ async function loadDailyNBA() {
     const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`);
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
-    const events = data.events || [];
-    if (!events.length) {
-      el.innerHTML = '<div class="daily-empty">אין משחקי NBA היום</div>';
+    const upcoming = pickUpcomingEvents(data.events);
+    if (!upcoming.length) {
+      const ev2 = await fetchScoreboardUpcoming('basketball/nba', 30);
+      if (!ev2.length) {
+        el.innerHTML = '<div class="daily-empty">אין משחקי NBA קרובים בימים הקרובים</div>';
+        return;
+      }
+      el.innerHTML = ev2.slice(0, 6).map(makeNBARow).join('') + moreGamesNote(ev2.length, Math.min(6, ev2.length));
       return;
     }
-    el.innerHTML = events.map(ev => {
-      const comp = ev.competitions?.[0] || {};
-      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
-      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
-      const home = homeTeam?.team?.abbreviation || '?';
-      const away = awayTeam?.team?.abbreviation || '?';
-      const time = formatGameDateTime(ev.date);
-      const status = comp.status?.type?.completed ? '(סיום)' : comp.status?.type?.inProgress ? '🔴 חי' : time;
-      const nbaTV = [
-        { region: 'ישראל', channel: 'ספורט 5' },
-        { region: 'ארה"ב', channel: 'ESPN / ABC / TNT / Prime Video' },
-      ];
-      const seriesSummary = comp.series?.summary
-        || comp.notes?.find(n => n.type === 'event')?.headline
-        || null;
-      const modalData = {
-        sport: 'basketball', league: 'NBA',
-        home: homeTeam?.team?.displayName || home,
-        away: awayTeam?.team?.displayName || away,
-        date: ev.date, tv: nbaTV, detail: 'NBA',
-        series: seriesSummary,
-        homeScore: homeTeam?.score, awayScore: awayTeam?.score,
-        completed: !!comp.status?.type?.completed
-      };
-      const encoded = encodeModalData(modalData);
-      return `<div class="daily-game clickable" onclick='openModal(decodeURIComponent("${encoded}"))'>
-        <div class="daily-game-teams">${escapeHtml(away)} @ ${escapeHtml(home)}</div>
-        <div class="daily-game-time">${status}</div>
-      </div>`;
-    }).join('');
+    el.innerHTML = upcoming.slice(0, 6).map(makeNBARow).join('') + moreGamesNote(upcoming.length, Math.min(6, upcoming.length));
   } catch (e) {
     logAppError('loadDailyNBA', e);
     el.innerHTML = '<div class="daily-empty">שגיאה בטעינת NBA</div>';
@@ -2726,36 +2737,36 @@ function renderRegionTeams() {
 const MONTH_GAMES = [
   { tier:'major', emoji:'⚾', sport:'בייסבול', name:'Texas Rangers', league:'MLB', venue:'Globe Life Field', city:'ארלינגטון, טקסס', firstDate:'2026-09-15',
     games:[
-      { date:'15–17 בספטמבר', opp:'נגד Boston Red Sox' },
-      { date:'18–19 בספטמבר', opp:'נגד Toronto Blue Jays (סבב הבית האחרון של העונה)' },
+      { date:'15–17 בספטמבר', iso:'2026-09-17', opp:'נגד Boston Red Sox' },
+      { date:'18–19 בספטמבר', iso:'2026-09-19', opp:'נגד Toronto Blue Jays (סבב הבית האחרון של העונה)' },
     ],
     note:'עדכון סופי: העונה הסדירה הסתיימה ב-27/09 במשחקי חוץ, והקבוצה הודחה רשמית ממרוץ הפלייאוף ביום האחרון של העונה (סיימה 80-82) — אין משחקי בית נוספים בטווח הזה ואין משחקי פלייאוף.' },
   { tier:'major', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Cowboys', league:'NFL', venue:'AT&T Stadium', city:'ארלינגטון, טקסס', firstDate:'2026-09-20',
     games:[
-      { date:'20 בספטמבר', opp:'נגד Washington Commanders' },
-      { date:'8 באוקטובר', opp:'נגד Tampa Bay Buccaneers (חמישי, ערוץ Amazon Prime)' },
+      { date:'20 בספטמבר', iso:'2026-09-20', opp:'נגד Washington Commanders' },
+      { date:'8 באוקטובר', iso:'2026-10-08', opp:'נגד Tampa Bay Buccaneers (חמישי, ערוץ Amazon Prime)' },
     ] },
   { tier:'major', emoji:'⚽', sport:'כדורגל', name:'FC Dallas', league:'MLS', venue:'Toyota Stadium', city:'פריסקו, טקסס', firstDate:'2026-09-26',
     games:[
-      { date:'26 בספטמבר', opp:'נגד LAFC' },
-      { date:'14 באוקטובר', opp:'נגד Seattle Sounders FC' },
+      { date:'26 בספטמבר', iso:'2026-09-26', opp:'נגד LAFC' },
+      { date:'14 באוקטובר', iso:'2026-10-14', opp:'נגד Seattle Sounders FC' },
     ] },
   { tier:'major', emoji:'🏒', sport:'הוקי קרח', name:'Dallas Stars', league:'NHL', venue:'American Airlines Center', city:'דאלאס, טקסס', firstDate:'2026-09-21',
     games:[
-      { date:'21 בספטמבר', opp:'נגד St. Louis Blues (פרה-סיזון)' },
-      { date:'23 בספטמבר', opp:'נגד Minnesota Wild (פרה-סיזון)' },
-      { date:'2 באוקטובר', opp:'נגד St. Louis Blues (פתיחת העונה הסדירה בבית!)' },
+      { date:'21 בספטמבר', iso:'2026-09-21', opp:'נגד St. Louis Blues (פרה-סיזון)' },
+      { date:'23 בספטמבר', iso:'2026-09-23', opp:'נגד Minnesota Wild (פרה-סיזון)' },
+      { date:'2 באוקטובר', iso:'2026-10-02', opp:'נגד St. Louis Blues (פתיחת העונה הסדירה בבית!)' },
     ] },
   { tier:'major', emoji:'🏀', sport:'כדורסל', name:'Dallas Mavericks', league:'NBA', venue:'American Airlines Center', city:'דאלאס, טקסס', firstDate:'2026-10-14',
     games:[
-      { date:'14 באוקטובר', opp:'נגד New Orleans Pelicans (פרה-סיזון — המשחק היחיד באצטדיון בטווח הזה)' },
+      { date:'14 באוקטובר', iso:'2026-10-14', opp:'נגד New Orleans Pelicans (פרה-סיזון — המשחק היחיד באצטדיון בטווח הזה)' },
     ],
     note:'פתיחת העונה הסדירה היא ב-21/10 מול יוסטון — משחק חוץ, מחוץ לטווח הזה.' },
 
   { tier:'minor', emoji:'⚾', sport:'בייסבול', name:'Frisco RoughRiders', league:"Minor League Baseball · Double-A (שיוך ל-Texas Rangers)", venue:'Riders Field', city:'פריסקו, טקסס', firstDate:'2026-09-17',
     games:[
-      { date:'17 בספטמבר', opp:'נגד Amarillo Sod Poodles (משחק 2, סדרת חצי-הגמר)' },
-      { date:'18 בספטמבר', opp:'נגד Amarillo Sod Poodles (משחק 3, אם נדרש)' },
+      { date:'17 בספטמבר', iso:'2026-09-17', opp:'נגד Amarillo Sod Poodles (משחק 2, סדרת חצי-הגמר)' },
+      { date:'18 בספטמבר', iso:'2026-09-18', opp:'נגד Amarillo Sod Poodles (משחק 3, אם נדרש)' },
     ],
     note:'הריידרס הודחו במשחק 3 מול Amarillo Sod Poodles וסיימו את עונת 2026 — משחק הבית הפוטנציאלי של סדרת האליפות (20/09) לא התקיים.' },
 
@@ -2765,41 +2776,58 @@ const MONTH_GAMES = [
   // ── קולג' ──
   { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'TCU Horned Frogs', league:'NCAA · Big 12', venue:'Amon G. Carter Stadium', city:"פורט וורת', טקסס", firstDate:'2026-09-19',
     games:[
-      { date:'19 בספטמבר', opp:'נגד Arkansas State (Family Weekend)' },
-      { date:'3 באוקטובר', opp:'נגד BYU (Block T Hall of Fame Weekend)' },
+      { date:'19 בספטמבר', iso:'2026-09-19', opp:'נגד Arkansas State (Family Weekend)' },
+      { date:'3 באוקטובר', iso:'2026-10-03', opp:'נגד BYU (Block T Hall of Fame Weekend)' },
     ] },
   { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'SMU Mustangs', league:'NCAA · ACC', venue:'Gerald J. Ford Stadium', city:'דאלאס, טקסס', firstDate:'2026-09-26',
-    games:[ { date:'26 בספטמבר', opp:'נגד Missouri State (Family Weekend)' } ] },
+    games:[ { date:'26 בספטמבר', iso:'2026-09-26', opp:'נגד Missouri State (Family Weekend)' } ] },
   { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'North Texas Mean Green', league:'NCAA · American Conference', venue:'DATCU Stadium', city:'דנטון, טקסס', firstDate:'2026-09-26',
-    games:[ { date:'26 בספטמבר', opp:'נגד Houston Christian (Family Weekend / Senior Day)' } ] },
+    games:[ { date:'26 בספטמבר', iso:'2026-09-26', opp:'נגד Houston Christian (Family Weekend / Senior Day)' } ] },
 
   // ── פורמולה 1 — לא משחקי בית בדאלאס, אלא מרוצים משודרים שחלים בטווח הזה (ראו בקשה מפורשת) ──
   { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של אזרבייג\'ן', league:'Formula 1', venue:'Baku City Circuit', city:'באקו, אזרבייג\'ן', firstDate:'2026-09-26',
-    games:[ { date:'26 בספטמבר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
+    games:[ { date:'26 בספטמבר', iso:'2026-09-26', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
   { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של בחריין (במלזיה)', league:'Formula 1', venue:'Sepang International Circuit', city:'ספאנג, מלזיה', firstDate:'2026-10-04',
-    games:[ { date:'4 באוקטובר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ],
-    note:'זהו מרוץ הבחריין הרשמי (Bahrain Grand Prix) בלוח ה-F1 של 2026, המתקיים באופן זמני במעגל Sepang במלזיה תוך שמירה על שם החסות המקורי (כך פורסם רשמית בלוח המרוצים של ESPN/F1).' },
+    games:[ { date:'4 באוקטובר', iso:'2026-10-04', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ],
+    note:'לפי הודעה רשמית של Formula1.com (אתר ה-F1 הרשמי) מ-2026: מרוץ ה-Bahrain Grand Prix (בשם המלא "Formula 1 Gulf Air Bahrain Grand Prix") עבר החל מ-2026 למעגל Sepang במלזיה, תוך שמירה על שם החסות. תאריך המרוץ: 2–4 באוקטובר 2026.' },
   { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של סינגפור', league:'Formula 1', venue:'Marina Bay Street Circuit', city:'סינגפור', firstDate:'2026-10-11',
-    games:[ { date:'11 באוקטובר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
+    games:[ { date:'11 באוקטובר', iso:'2026-10-11', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
 ];
 
-const MONTH_WINDOW_START = '2026-09-15';
-const MONTH_WINDOW_END = '2026-10-15';
+// גבול העדכון החיצוני של המחקר הידני (עד כאן נבדקו לוחות זמנים בפועל) - כשהתאריך הנוכחי
+// עובר את זה, סימן שהגיע הזמן לסבב מחקר/עדכון נתונים חדש לחודש הבא (לא קשור לסינון למטה).
+const MONTH_DATA_RESEARCHED_THROUGH = '2026-10-15';
 
-function updateMonthWindowText() {
-  const fmt = iso => {
-    const d = new Date(iso + 'T00:00:00');
-    return `${d.getDate()}/${d.getMonth() + 1}`;
-  };
+// עדכון 28/09/2026 (ביוזמת ניר, פעמיים: "החלון לא מתגלגל" + "משחקי RoughRiders מה-17-18/9
+// שכבר עברו עדיין מוצגים כ'בחודש הקרוב'"): הטקסט הקודם רק "חישב" מחדש את אותו טווח קבוע -
+// זה לא פתר בפועל את הצגת משחקים שכבר עברו. הפתרון האמיתי: לסנן בפועל כל משחק שכבר עבר
+// (לפי תאריך iso שנוסף לכל משחק), ולהציג בכותרת את הטווח האמיתי של מה שנשאר על המסך -
+// כך שהטווח "מתגלגל" עם הזמן במקום להישאר תקוע. חשוב: זה עדיין לא מוסיף נתונים חדשים
+// מעבר ל-MONTH_DATA_RESEARCHED_THROUGH - כשמגיעים לשם, עדיין צריך סבב מחקר ידני לחודש הבא.
+function monthTodayISO() {
+  const d = nowInTX();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function updateMonthWindowText(visibleTeams, todayISO) {
   const startEl = document.getElementById('month-window-text');
   const badgeEl = document.getElementById('month-window-badge');
   const warnEl = document.getElementById('month-stale-warning');
-  const startD = new Date(MONTH_WINDOW_START + 'T00:00:00');
-  const endD = new Date(MONTH_WINDOW_END + 'T00:00:00');
-  const today = new Date();
-  if (startEl) startEl.textContent = `בין ${startD.getDate()} ב${MONTHS_HE[startD.getMonth()]} ל-${endD.getDate()} ב${MONTHS_HE[endD.getMonth()]} ${endD.getFullYear()}`;
-  if (badgeEl) badgeEl.textContent = `📅 ${fmt(MONTH_WINDOW_START)} – ${fmt(MONTH_WINDOW_END)}/${endD.getFullYear()}`;
-  if (warnEl) warnEl.classList.toggle('hidden', today <= endD);
+  const allIso = visibleTeams.flatMap(t => t.games.map(g => g.iso)).sort();
+  const researchedEndD = new Date(MONTH_DATA_RESEARCHED_THROUGH + 'T00:00:00');
+  const today = new Date(todayISO + 'T00:00:00');
+  if (!allIso.length) {
+    if (startEl) startEl.textContent = 'אין משחקים עתידיים בנתונים שנאספו';
+    if (badgeEl) badgeEl.textContent = '📅 הנתונים דורשים עדכון';
+    if (warnEl) warnEl.classList.remove('hidden');
+    return;
+  }
+  const fmt = d => `${d.getDate()}/${d.getMonth() + 1}`;
+  const minD = new Date(allIso[0] + 'T00:00:00');
+  const maxD = new Date(allIso[allIso.length - 1] + 'T00:00:00');
+  if (startEl) startEl.textContent = `בין ${minD.getDate()} ב${MONTHS_HE[minD.getMonth()]} ל-${maxD.getDate()} ב${MONTHS_HE[maxD.getMonth()]} ${maxD.getFullYear()}`;
+  if (badgeEl) badgeEl.textContent = `📅 ${fmt(minD)} – ${fmt(maxD)}/${maxD.getFullYear()}`;
+  if (warnEl) warnEl.classList.toggle('hidden', today <= researchedEndD);
 }
 
 const MONTHS_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
@@ -2823,9 +2851,15 @@ function monthSearch(val) {
 }
 
 function renderMonthGames() {
-  updateMonthWindowText();
+  const todayISO = monthTodayISO();
+  // מסננים כל משחק שכבר עבר (לפי iso) - קבוצה שכל המשחקים שלה בטווח כבר עברו נעלמת מהתצוגה
+  // לגמרי (במקום להישאר "תקועה" עם משחקי עבר תחת כותרת "בחודש הקרוב").
+  const withUpcoming = MONTH_GAMES
+    .map(t => ({ ...t, games: t.games.filter(g => g.iso >= todayISO) }))
+    .filter(t => t.games.length > 0);
+  updateMonthWindowText(withUpcoming, todayISO);
   const container = document.getElementById('month-container');
-  let filtered = MONTH_GAMES.filter(t => _monthFilter === 'all' || t.tier === _monthFilter);
+  let filtered = withUpcoming.filter(t => _monthFilter === 'all' || t.tier === _monthFilter);
   if (_monthSearch) {
     filtered = filtered.filter(t =>
       t.name.toLowerCase().includes(_monthSearch) ||
