@@ -234,6 +234,17 @@
     .month-hero-emoji { font-size: 3.5rem; }
     .month-hero-text h2 { font-size: 1.6rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
     .month-hero-text p  { font-size: 0.9rem; color: #8a8fa8; line-height: 1.5; }
+    #month-stale-warning.hidden { display: none; }
+    .month-stale-warning {
+      margin-top: 8px;
+      background: rgba(230, 160, 40, 0.12);
+      border: 1px solid rgba(230, 160, 40, 0.4);
+      color: #e6a028;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
     .month-hero-badges { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
     .month-badge {
       background: #2a2d3e;
@@ -1018,7 +1029,7 @@
 <!-- Nav -->
 <div class="top-nav">
   <button class="nav-btn active" id="btn-main" onclick="showPage('main')">&#127968; ספורט</button>
-  <button class="nav-btn region-btn" id="btn-region" onclick="showPage('region')">📍 משחקים באזור</button>
+  <button class="nav-btn region-btn" id="btn-region" onclick="showPage('region')">📍 קבוצות וליגות באזור</button>
   <button class="nav-btn month-btn" id="btn-month" onclick="showPage('month')">🗓️ משחקים בחודש הקרוב</button>
 </div>
 
@@ -1121,8 +1132,8 @@
   <div class="region-hero">
     <div class="region-hero-emoji">📍</div>
     <div class="region-hero-text">
-      <h2>משחקים באזור &mdash; דאלאס &ndash; פורט וורת&#39;, טקסס</h2>
-      <p>מדריך מלא לכל קבוצות וליגות הספורט הפעילות במטרופולין דאלאס&ndash;פורט וורת&#39; (DFW): ליגות מקצועיות ראשיות, ליגות פיתוח ומשניות, ספורט קולג&#39;ים ואירועי ספורט מוטורי וגולף &bull; שעון טקסס (America/Chicago)</p>
+      <h2>קבוצות וליגות באזור &mdash; דאלאס &ndash; פורט וורת&#39;, טקסס</h2>
+      <p>מדריך קבוצות וליגות (לא לוח משחקים) &mdash; כל קבוצות וליגות הספורט הפעילות במטרופולין דאלאס&ndash;פורט וורת&#39; (DFW): ליגות מקצועיות ראשיות, ליגות פיתוח ומשניות, ספורט קולג&#39;ים ואירועי ספורט מוטורי וגולף, עם קישור לאתר הרשמי של כל קבוצה &bull; ללוח משחקים בפועל ראו את עמוד &quot;משחקים בחודש הקרוב&quot;</p>
       <div class="region-hero-badges">
         <span class="region-badge">🏆 ליגות ראשיות</span>
         <span class="region-badge">🥈 ליגות משניות ופיתוח</span>
@@ -1148,9 +1159,10 @@
     <div class="month-hero-emoji">🗓️</div>
     <div class="month-hero-text">
       <h2>משחקי דאלאס + שידורי F1 בחודש הקרוב</h2>
-      <p>כל משחקי הבית שנמצאו בדאלאס&ndash;פורט וורת&#39; בין 15 בספטמבר ל-15 באוקטובר 2026 (שעון טקסס), לפי לוחות הזמנים הרשמיים שפורסמו. ליגות ללא משחקי בית מתוכננים בטווח הזה (עונה סגורה/אין אצטדיון פנוי כרגע) לא מופיעות כאן. נוספו גם מרוצי הפורמולה 1 שחלים בטווח הזה — אלה שידורי טלוויזיה, לא משחקי בית בדאלאס.</p>
+      <p>כל משחקי הבית שנמצאו בדאלאס&ndash;פורט וורת&#39; <span id="month-window-text">בין 15 בספטמבר ל-15 באוקטובר 2026</span> (שעון טקסס), לפי לוחות הזמנים הרשמיים שפורסמו. ליגות ללא משחקי בית מתוכננים בטווח הזה (עונה סגורה/אין אצטדיון פנוי כרגע) לא מופיעות כאן. נוספו גם מרוצי הפורמולה 1 שחלים בטווח הזה — אלה שידורי טלוויזיה, לא משחקי בית בדאלאס.</p>
+      <div id="month-stale-warning" class="month-stale-warning hidden">⚠️ הטווח שלמעלה חלף — הנתונים בעמוד זה טרם עודכנו לתקופה החדשה, ייתכן שהם חלקיים או לא רלוונטיים יותר.</div>
       <div class="month-hero-badges">
-        <span class="month-badge">📅 15/09 &ndash; 15/10/2026</span>
+        <span class="month-badge" id="month-window-badge">📅 15/09 &ndash; 15/10/2026</span>
         <span class="month-badge">🏆 ליגות ראשיות</span>
         <span class="month-badge">🥈 ליגות משניות</span>
         <span class="month-badge">🎓 קולג'</span>
@@ -2635,12 +2647,10 @@ const REGION_TEAMS = [
   { tier:'minor', emoji:'⚽', sport:'כדורגל', name:'North Texas SC', league:'MLS Next Pro (קבוצת פיתוח של FC Dallas)', venue:'Toyota Stadium', city:'פריסקו, טקסס', url:'https://www.fcdallas.com/northtexassc' },
   { tier:'minor', emoji:'⚽', sport:'כדורגל אולם', name:'Dallas Sidekicks', league:'MASL', venue:'Credit Union of Texas Event Center', city:'אלן, טקסס', url:'https://www.dallassidekicks.net/' },
   { tier:'minor', emoji:'⚽', sport:'כדורגל', name:'Fort Worth Vaqueros', league:'NPSL', venue:'W.O. Barnes Stadium', city:'פורט וורת\', טקסס', url:'https://www.fwvaqueros.com/' },
-  { tier:'minor', emoji:'🏉', sport:'רוגבי', name:'Dallas Jackals', league:'Major League Rugby', venue:'Choctaw Stadium', city:'ארלינגטון, טקסס', url:'https://www.dallasjackals.com/' },
-  { tier:'minor', emoji:'🥍', sport:'לקרוס', name:'Panther City Lacrosse Club', league:'NLL', venue:'Dickies Arena', city:'פורט וורת\', טקסס', url:'https://www.panthercitylacrosse.com/' },
   { tier:'minor', emoji:'🤠', sport:'רכיבת פרים', name:'Ariat Texas Rattlers', league:'PBR Team Series', venue:'Dickies Arena', city:'פורט וורת\', טקסס', url:'https://pbrteamseries.com/' },
   { tier:'minor', emoji:'🏒', sport:'הוקי קרח', name:'Allen Americans', league:'ECHL', venue:'Credit Union of Texas Event Center', city:'אלן, טקסס', url:'https://www.allenamericans.com/' },
   { tier:'minor', emoji:'🏒', sport:'הוקי קרח נוער', name:'Lone Star Brahmas', league:'NAHL', venue:'NYTEX Sports Centre', city:'נורת\' ריצ\'לנד הילס, טקסס', url:'https://www.brahmashockey.com/' },
-  { tier:'minor', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Renegades', league:'UFL', venue:'Choctaw Stadium', city:'ארלינגטון, טקסס', url:'https://www.theufl.com/' },
+  { tier:'minor', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Renegades', league:'UFL', venue:'Toyota Stadium', city:'פריסקו, טקסס', url:'https://www.theufl.com/' },
   { tier:'minor', emoji:'🎮', sport:'ספורט אלקטרוני', name:'Dallas Fuel', league:"Overwatch Champions Series", venue:'אירועים / שידור מקוון', city:'דאלאס, טקסס', url:'https://www.dallasfuel.com/' },
   { tier:'minor', emoji:'🥏', sport:'פריזבי אולטימייט', name:'Dallas Roughnecks', league:'AUDL', venue:'Choctaw Stadium', city:'ארלינגטון, טקסס', url:'https://www.roughnecksultimate.com/' },
 
@@ -2719,7 +2729,7 @@ const MONTH_GAMES = [
       { date:'15–17 בספטמבר', opp:'נגד Boston Red Sox' },
       { date:'18–19 בספטמבר', opp:'נגד Toronto Blue Jays (סבב הבית האחרון של העונה)' },
     ],
-    note:'העונה הסדירה מסתיימת ב-27/09 במשחקי חוץ — אין עוד משחקי בית מתוכננים בטווח הזה. הקבוצה מאחורי בתחרות ה-Wild Card נכון לתחילת ספטמבר; אם תעפיל לפלייאוף, לוח הבית לא פורסם עדיין.' },
+    note:'עדכון סופי: העונה הסדירה הסתיימה ב-27/09 במשחקי חוץ, והקבוצה הודחה רשמית ממרוץ הפלייאוף ביום האחרון של העונה (סיימה 80-82) — אין משחקי בית נוספים בטווח הזה ואין משחקי פלייאוף.' },
   { tier:'major', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Cowboys', league:'NFL', venue:'AT&T Stadium', city:'ארלינגטון, טקסס', firstDate:'2026-09-20',
     games:[
       { date:'20 בספטמבר', opp:'נגד Washington Commanders' },
@@ -2742,7 +2752,15 @@ const MONTH_GAMES = [
     ],
     note:'פתיחת העונה הסדירה היא ב-21/10 מול יוסטון — משחק חוץ, מחוץ לטווח הזה.' },
 
-  // ── ליגות משניות: לא נמצאו משחקי בית מתוכננים בטווח הזה (ראו הערה למטה) ──
+  { tier:'minor', emoji:'⚾', sport:'בייסבול', name:'Frisco RoughRiders', league:"Minor League Baseball · Double-A (שיוך ל-Texas Rangers)", venue:'Riders Field', city:'פריסקו, טקסס', firstDate:'2026-09-17',
+    games:[
+      { date:'17 בספטמבר', opp:'נגד Amarillo Sod Poodles (משחק 2, סדרת חצי-הגמר)' },
+      { date:'18 בספטמבר', opp:'נגד Amarillo Sod Poodles (משחק 3, אם נדרש)' },
+    ],
+    note:'הריידרס הודחו במשחק 3 מול Amarillo Sod Poodles וסיימו את עונת 2026 — משחק הבית הפוטנציאלי של סדרת האליפות (20/09) לא התקיים.' },
+
+  // ── שאר הליגות המשניות (Texas Legends, Allen Americans, Lone Star Brahmas, Dallas Sidekicks, North Texas SC, Fort Worth Vaqueros, Ariat Texas Rattlers, Dallas Roughnecks) —
+  //    נבדק מול הלוחות הרשמיים: העונות שלהן נפתחות רק מאוחר יותר באוקטובר/נובמבר, ואין להן משחקי בית בטווח הזה ──
 
   // ── קולג' ──
   { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'TCU Horned Frogs', league:'NCAA · Big 12', venue:'Amon G. Carter Stadium', city:"פורט וורת', טקסס", firstDate:'2026-09-19',
@@ -2760,10 +2778,31 @@ const MONTH_GAMES = [
     games:[ { date:'26 בספטמבר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
   { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של בחריין (במלזיה)', league:'Formula 1', venue:'Sepang International Circuit', city:'ספאנג, מלזיה', firstDate:'2026-10-04',
     games:[ { date:'4 באוקטובר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ],
-    note:'שם מוזר בכוונה: זהו מרוץ ה-Bahrain GP הרשמי, שהועבר לזמניית ל-2026 למעגל Sepang במלזיה, תוך שמירה על שם וחסות בחריין.' },
+    note:'זהו מרוץ הבחריין הרשמי (Bahrain Grand Prix) בלוח ה-F1 של 2026, המתקיים באופן זמני במעגל Sepang במלזיה תוך שמירה על שם החסות המקורי (כך פורסם רשמית בלוח המרוצים של ESPN/F1).' },
   { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של סינגפור', league:'Formula 1', venue:'Marina Bay Street Circuit', city:'סינגפור', firstDate:'2026-10-11',
     games:[ { date:'11 באוקטובר', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
 ];
+
+const MONTH_WINDOW_START = '2026-09-15';
+const MONTH_WINDOW_END = '2026-10-15';
+
+function updateMonthWindowText() {
+  const fmt = iso => {
+    const d = new Date(iso + 'T00:00:00');
+    return `${d.getDate()}/${d.getMonth() + 1}`;
+  };
+  const startEl = document.getElementById('month-window-text');
+  const badgeEl = document.getElementById('month-window-badge');
+  const warnEl = document.getElementById('month-stale-warning');
+  const startD = new Date(MONTH_WINDOW_START + 'T00:00:00');
+  const endD = new Date(MONTH_WINDOW_END + 'T00:00:00');
+  const today = new Date();
+  if (startEl) startEl.textContent = `בין ${startD.getDate()} ב${MONTHS_HE[startD.getMonth()]} ל-${endD.getDate()} ב${MONTHS_HE[endD.getMonth()]} ${endD.getFullYear()}`;
+  if (badgeEl) badgeEl.textContent = `📅 ${fmt(MONTH_WINDOW_START)} – ${fmt(MONTH_WINDOW_END)}/${endD.getFullYear()}`;
+  if (warnEl) warnEl.classList.toggle('hidden', today <= endD);
+}
+
+const MONTHS_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 
 const MONTH_TIER_LABEL = {
   major: 'ליגות ראשיות', minor: 'ליגות משניות', college: "ספורט קולג'", motorsport: 'פורמולה 1 (משודר)',
@@ -2784,6 +2823,7 @@ function monthSearch(val) {
 }
 
 function renderMonthGames() {
+  updateMonthWindowText();
   const container = document.getElementById('month-container');
   let filtered = MONTH_GAMES.filter(t => _monthFilter === 'all' || t.tier === _monthFilter);
   if (_monthSearch) {
