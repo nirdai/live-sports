@@ -1067,15 +1067,15 @@
       <div id="daily-mls"><div class="daily-loading">טוען...</div></div>
     </div>
     <div class="daily-section nascar">
-      <div class="daily-section-title">🏁 NASCAR Cup — הבא</div>
+      <div class="daily-section-title">🏁 NASCAR Cup (ליגה 1) — המרוץ הבא</div>
       <div id="daily-nascar"><div class="daily-loading">טוען...</div></div>
     </div>
     <div class="daily-section nascar-xfinity">
-      <div class="daily-section-title">🏎️ NASCAR O'Reilly — הבא</div>
+      <div class="daily-section-title">🏎️ NASCAR O'Reilly (ליגה 2) — המרוץ הבא</div>
       <div id="daily-nascar-xfinity"><div class="daily-loading">טוען...</div></div>
     </div>
     <div class="daily-section nascar-truck">
-      <div class="daily-section-title">🚚 NASCAR Truck — הבא</div>
+      <div class="daily-section-title">🚚 NASCAR Trucks (ליגה 3) — המרוץ הבא</div>
       <div id="daily-nascar-truck"><div class="daily-loading">טוען...</div></div>
     </div>
     <div class="daily-section indycar">
@@ -1159,10 +1159,10 @@
     <div class="month-hero-emoji">🗓️</div>
     <div class="month-hero-text">
       <h2>משחקי דאלאס + שידורי F1 בחודש הקרוב</h2>
-      <p>כל משחקי הבית שנמצאו בדאלאס&ndash;פורט וורת&#39; <span id="month-window-text">בין 15 בספטמבר ל-15 באוקטובר 2026</span> (שעון טקסס), לפי לוחות הזמנים הרשמיים שפורסמו. ליגות ללא משחקי בית מתוכננים בטווח הזה (עונה סגורה/אין אצטדיון פנוי כרגע) לא מופיעות כאן. נוספו גם מרוצי הפורמולה 1 שחלים בטווח הזה — אלה שידורי טלוויזיה, לא משחקי בית בדאלאס.</p>
+      <p>כל משחקי הבית שנמצאו בדאלאס&ndash;פורט וורת&#39; <span id="month-window-text">בין 24 באוקטובר ל-29 בנובמבר 2026</span> (שעון טקסס), לפי לוחות הזמנים הרשמיים שפורסמו. ליגות ללא משחקי בית מתוכננים בטווח הזה (עונה סגורה/אין אצטדיון פנוי כרגע) לא מופיעות כאן. נוספו גם מרוצי הפורמולה 1 שחלים בטווח הזה — אלה שידורי טלוויזיה, לא משחקי בית בדאלאס.</p>
       <div id="month-stale-warning" class="month-stale-warning hidden">⚠️ הטווח שלמעלה חלף — הנתונים בעמוד זה טרם עודכנו לתקופה החדשה, ייתכן שהם חלקיים או לא רלוונטיים יותר.</div>
       <div class="month-hero-badges">
-        <span class="month-badge" id="month-window-badge">📅 15/09 &ndash; 15/10/2026</span>
+        <span class="month-badge" id="month-window-badge">📅 24/10 &ndash; 29/11/2026</span>
         <span class="month-badge">🏆 ליגות ראשיות</span>
         <span class="month-badge">🥈 ליגות משניות</span>
         <span class="month-badge">🎓 קולג'</span>
@@ -2730,73 +2730,120 @@ function renderRegionTeams() {
   container.innerHTML = html;
 }
 
-// ─── משחקים בדאלאס בחודש הקרוב (15/08–15/09/2026) ─────────────────────────
+// ─── משחקים בדאלאס בחודש הקרוב (נחקר ב-24/10/2026, עד 30/11/2026) ─────────────────────────
 // נתונים סטטיים שנאספו מלוחות הזמנים הרשמיים שפורסמו לכל קבוצה. ליגות ללא
 // משחקי בית בטווח הזה (עונה סגורה/טרם התחילה) לא כלולות במערך.
 // firstDate משמש למיון הכרטיסיות לפי סדר כרונולוגי בתוך כל דרגה.
 const MONTH_GAMES = [
-  { tier:'major', emoji:'⚾', sport:'בייסבול', name:'Texas Rangers', league:'MLB', venue:'Globe Life Field', city:'ארלינגטון, טקסס', firstDate:'2026-09-15',
+  { tier:'major', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Cowboys', league:'NFL', venue:'AT&T Stadium', city:'ארלינגטון, טקסס', firstDate:'2026-11-01',
     games:[
-      { date:'15–17 בספטמבר', iso:'2026-09-17', opp:'נגד Boston Red Sox' },
-      { date:'18–19 בספטמבר', iso:'2026-09-19', opp:'נגד Toronto Blue Jays (סבב הבית האחרון של העונה)' },
+      { date:'1 בנובמבר', iso:'2026-11-01', opp:'נגד Arizona Cardinals (12:00, FOX)' },
+      { date:'15 בנובמבר', iso:'2026-11-15', opp:'נגד San Francisco 49ers (15:25, FOX)' },
+      { date:'22 בנובמבר', iso:'2026-11-22', opp:'נגד Tennessee Titans (12:00, FOX)' },
+      { date:'26 בנובמבר', iso:'2026-11-26', opp:'נגד Philadelphia Eagles (חג ההודיה, 15:25, FOX)' },
     ],
-    note:'עדכון סופי: העונה הסדירה הסתיימה ב-27/09 במשחקי חוץ, והקבוצה הודחה רשמית ממרוץ הפלייאוף ביום האחרון של העונה (סיימה 80-82) — אין משחקי בית נוספים בטווח הזה ואין משחקי פלייאוף.' },
-  { tier:'major', emoji:'🏈', sport:'פוטבול אמריקאי', name:'Dallas Cowboys', league:'NFL', venue:'AT&T Stadium', city:'ארלינגטון, טקסס', firstDate:'2026-09-20',
+    note:'ב-26/10 (שני) ו-8/11 הקאובויז משחקים בחוץ (פילדלפיה ואינדיאנפוליס).' },
+  { tier:'major', emoji:'🏀', sport:'כדורסל', name:'Dallas Mavericks', league:'NBA', venue:'American Airlines Center', city:'דאלאס, טקסס', firstDate:'2026-10-24',
     games:[
-      { date:'20 בספטמבר', iso:'2026-09-20', opp:'נגד Washington Commanders' },
-      { date:'8 באוקטובר', iso:'2026-10-08', opp:'נגד Tampa Bay Buccaneers (חמישי, ערוץ Amazon Prime)' },
-    ] },
-  { tier:'major', emoji:'⚽', sport:'כדורגל', name:'FC Dallas', league:'MLS', venue:'Toyota Stadium', city:'פריסקו, טקסס', firstDate:'2026-09-26',
-    games:[
-      { date:'26 בספטמבר', iso:'2026-09-26', opp:'נגד LAFC' },
-      { date:'14 באוקטובר', iso:'2026-10-14', opp:'נגד Seattle Sounders FC' },
-    ] },
-  { tier:'major', emoji:'🏒', sport:'הוקי קרח', name:'Dallas Stars', league:'NHL', venue:'American Airlines Center', city:'דאלאס, טקסס', firstDate:'2026-09-21',
-    games:[
-      { date:'21 בספטמבר', iso:'2026-09-21', opp:'נגד St. Louis Blues (פרה-סיזון)' },
-      { date:'23 בספטמבר', iso:'2026-09-23', opp:'נגד Minnesota Wild (פרה-סיזון)' },
-      { date:'2 באוקטובר', iso:'2026-10-02', opp:'נגד St. Louis Blues (פתיחת העונה הסדירה בבית!)' },
-    ] },
-  { tier:'major', emoji:'🏀', sport:'כדורסל', name:'Dallas Mavericks', league:'NBA', venue:'American Airlines Center', city:'דאלאס, טקסס', firstDate:'2026-10-14',
-    games:[
-      { date:'14 באוקטובר', iso:'2026-10-14', opp:'נגד New Orleans Pelicans (פרה-סיזון — המשחק היחיד באצטדיון בטווח הזה)' },
+      { date:'24 באוקטובר', iso:'2026-10-24', opp:'נגד San Antonio Spurs (פתיחת עונת הבית, 19:00)' },
+      { date:'28 באוקטובר', iso:'2026-10-28', opp:'נגד Oklahoma City Thunder (ESPN)' },
+      { date:'30 באוקטובר', iso:'2026-10-30', opp:'נגד Houston Rockets (NBA Cup)' },
+      { date:'2 בנובמבר', iso:'2026-11-02', opp:'נגד Sacramento Kings' },
+      { date:'6 בנובמבר', iso:'2026-11-06', opp:'נגד Utah Jazz (NBA Cup)' },
+      { date:'8 בנובמבר', iso:'2026-11-08', opp:'נגד Brooklyn Nets' },
+      { date:'9 בנובמבר', iso:'2026-11-09', opp:'נגד Indiana Pacers' },
+      { date:'18 בנובמבר', iso:'2026-11-18', opp:'נגד Golden State Warriors' },
+      { date:'21 בנובמבר', iso:'2026-11-21', opp:'נגד LA Clippers' },
+      { date:'30 בנובמבר', iso:'2026-11-30', opp:'נגד Boston Celtics' },
     ],
-    note:'פתיחת העונה הסדירה היא ב-21/10 מול יוסטון — משחק חוץ, מחוץ לטווח הזה.' },
-
-  { tier:'minor', emoji:'⚾', sport:'בייסבול', name:'Frisco RoughRiders', league:"Minor League Baseball · Double-A (שיוך ל-Texas Rangers)", venue:'Riders Field', city:'פריסקו, טקסס', firstDate:'2026-09-17',
+    note:'העונה הסדירה נפתחה ב-21/10 בחוץ מול יוסטון. משחקי NBA Cup מסומנים לפי רשימת משחקי הבית.' },
+  { tier:'major', emoji:'🏒', sport:'הוקי קרח', name:'Dallas Stars', league:'NHL', venue:'American Airlines Center', city:'דאלאס, טקסס', firstDate:'2026-10-25',
     games:[
-      { date:'17 בספטמבר', iso:'2026-09-17', opp:'נגד Amarillo Sod Poodles (משחק 2, סדרת חצי-הגמר)' },
-      { date:'18 בספטמבר', iso:'2026-09-18', opp:'נגד Amarillo Sod Poodles (משחק 3, אם נדרש)' },
-    ],
-    note:'הריידרס הודחו במשחק 3 מול Amarillo Sod Poodles וסיימו את עונת 2026 — משחק הבית הפוטנציאלי של סדרת האליפות (20/09) לא התקיים.' },
-
-  // ── שאר הליגות המשניות (Texas Legends, Allen Americans, Lone Star Brahmas, Dallas Sidekicks, North Texas SC, Fort Worth Vaqueros, Ariat Texas Rattlers, Dallas Roughnecks) —
-  //    נבדק מול הלוחות הרשמיים: העונות שלהן נפתחות רק מאוחר יותר באוקטובר/נובמבר, ואין להן משחקי בית בטווח הזה ──
-
-  // ── קולג' ──
-  { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'TCU Horned Frogs', league:'NCAA · Big 12', venue:'Amon G. Carter Stadium', city:"פורט וורת', טקסס", firstDate:'2026-09-19',
-    games:[
-      { date:'19 בספטמבר', iso:'2026-09-19', opp:'נגד Arkansas State (Family Weekend)' },
-      { date:'3 באוקטובר', iso:'2026-10-03', opp:'נגד BYU (Block T Hall of Fame Weekend)' },
+      { date:'25 באוקטובר', iso:'2026-10-25', opp:'נגד New York Islanders' },
+      { date:'27 באוקטובר', iso:'2026-10-27', opp:'נגד New Jersey Devils' },
+      { date:'29 באוקטובר', iso:'2026-10-29', opp:'נגד Montreal Canadiens' },
+      { date:'31 באוקטובר', iso:'2026-10-31', opp:'נגד Columbus Blue Jackets' },
+      { date:'7 בנובמבר', iso:'2026-11-07', opp:'נגד San Jose Sharks' },
+      { date:'12 בנובמבר', iso:'2026-11-12', opp:'נגד Winnipeg Jets' },
+      { date:'14 בנובמבר', iso:'2026-11-14', opp:'נגד Buffalo Sabres' },
+      { date:'15 בנובמבר', iso:'2026-11-15', opp:'נגד Florida Panthers' },
+      { date:'22 בנובמבר', iso:'2026-11-22', opp:'נגד Pittsburgh Penguins' },
+      { date:'25 בנובמבר', iso:'2026-11-25', opp:'נגד Nashville Predators' },
+      { date:'28 בנובמבר', iso:'2026-11-28', opp:'נגד Utah Mammoth' },
     ] },
-  { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'SMU Mustangs', league:'NCAA · ACC', venue:'Gerald J. Ford Stadium', city:'דאלאס, טקסס', firstDate:'2026-09-26',
-    games:[ { date:'26 בספטמבר', iso:'2026-09-26', opp:'נגד Missouri State (Family Weekend)' } ] },
-  { tier:'college', emoji:'🎓', sport:"פוטבול קולג'", name:'North Texas Mean Green', league:'NCAA · American Conference', venue:'DATCU Stadium', city:'דנטון, טקסס', firstDate:'2026-09-26',
-    games:[ { date:'26 בספטמבר', iso:'2026-09-26', opp:'נגד Houston Christian (Family Weekend / Senior Day)' } ] },
-
-  // ── פורמולה 1 — לא משחקי בית בדאלאס, אלא מרוצים משודרים שחלים בטווח הזה (ראו בקשה מפורשת) ──
-  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של אזרבייג\'ן', league:'Formula 1', venue:'Baku City Circuit', city:'באקו, אזרבייג\'ן', firstDate:'2026-09-26',
-    games:[ { date:'26 בספטמבר', iso:'2026-09-26', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
-  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של בחריין (במלזיה)', league:'Formula 1', venue:'Sepang International Circuit', city:'ספאנג, מלזיה', firstDate:'2026-10-04',
-    games:[ { date:'4 באוקטובר', iso:'2026-10-04', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ],
-    note:'לפי הודעה רשמית של Formula1.com (אתר ה-F1 הרשמי) מ-2026: מרוץ ה-Bahrain Grand Prix (בשם המלא "Formula 1 Gulf Air Bahrain Grand Prix") עבר החל מ-2026 למעגל Sepang במלזיה, תוך שמירה על שם החסות. תאריך המרוץ: 2–4 באוקטובר 2026.' },
-  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של סינגפור', league:'Formula 1', venue:'Marina Bay Street Circuit', city:'סינגפור', firstDate:'2026-10-11',
-    games:[ { date:'11 באוקטובר', iso:'2026-10-11', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' } ] },
+  { tier:'major', emoji:'⚽', sport:'כדורגל', name:'FC Dallas', league:'MLS', venue:'Toyota Stadium', city:'פריסקו, טקסס', firstDate:'2026-10-24',
+    games:[
+      { date:'24 באוקטובר', iso:'2026-10-24', opp:'נגד San Jose Earthquakes' },
+      { date:'28 באוקטובר', iso:'2026-10-28', opp:'נגד Columbus Crew' },
+    ],
+    note:'הקבוצה העפילה כבר לפלייאוף (מקום 3 במערב נכון לאמצע אוקטובר). הפלייאוף מתחיל ב-18/11; משחקי בית בסיבוב הראשון תלויים במיקום הסופי בטבלה ואינם מאושרים עדיין.' },
+  { tier:'major', emoji:'⚽', sport:'כדורגל נשים', name:'Dallas Trinity FC', league:'USL Super League', venue:'דאלאס (האצטדיון לא אומת)', city:'דאלאס, טקסס', firstDate:'2026-11-01',
+    games:[
+      { date:'1 בנובמבר', iso:'2026-11-01', opp:'נגד Fort Lauderdale United FC (16:00)' },
+      { date:'8 בנובמבר', iso:'2026-11-08', opp:'נגד Sporting Club Jacksonville (16:00)' },
+      { date:'21 בנובמבר', iso:'2026-11-21', opp:'נגד Lexington Sporting (19:30)' },
+    ] },
+  { tier:'minor', emoji:'🏒', sport:'הוקי קרח', name:'Allen Americans', league:'ECHL', venue:'Comerica Center / Credit Union of Texas Event Center', city:'פריסקו ואלן, טקסס', firstDate:'2026-10-29',
+    games:[
+      { date:'29 באוקטובר', iso:'2026-10-29', opp:'נגד Idaho Steelheads (10:30, משחק בתי-ספר, Comerica Center בפריסקו)' },
+      { date:'30 באוקטובר', iso:'2026-10-30', opp:'נגד Idaho Steelheads (19:10, Military Night, Comerica Center בפריסקו)' },
+      { date:'20 בנובמבר', iso:'2026-11-20', opp:'נגד Kansas City Mavericks (19:10, פתיחת העונה באלן)' },
+    ],
+    note:'ייתכן משחק בית נוסף ב-21/11 מול Kansas City — לא אומת.' },
+  { tier:'minor', emoji:'🏀', sport:'כדורסל', name:'Texas Legends', league:'NBA G League (שיוך ל-Dallas Mavericks)', venue:'Comerica Center', city:'פריסקו, טקסס', firstDate:'2026-11-13',
+    games:[
+      { date:'13 בנובמבר', iso:'2026-11-13', opp:'נגד Rio Grande Valley Vipers (פתיחת העונה בבית, 19:00)' },
+      { date:'15 בנובמבר', iso:'2026-11-15', opp:'נגד Rio Grande Valley Vipers (15:00)' },
+      { date:'21 בנובמבר', iso:'2026-11-21', opp:'נגד Memphis Hustle (19:00)' },
+      { date:'27 בנובמבר', iso:'2026-11-27', opp:'נגד Osceola Magic (19:00)' },
+      { date:'29 בנובמבר', iso:'2026-11-29', opp:'נגד Osceola Magic (15:00)' },
+    ],
+    note:'שני המשחקים הראשונים של העונה (8 ו-10/11) הם משחקי חוץ במקסיקו סיטי.' },
+  { tier:'college', emoji:'🎓', sport:'פוטבול קולג\'', name:'TCU Horned Frogs', league:'NCAA · Big 12', venue:'Amon G. Carter Stadium', city:'פורט וורת\', טקסס', firstDate:'2026-10-24',
+    games:[
+      { date:'24 באוקטובר', iso:'2026-10-24', opp:'נגד West Virginia (11:00)' },
+      { date:'31 באוקטובר', iso:'2026-10-31', opp:'נגד Kansas (14:30)' },
+      { date:'14 בנובמבר', iso:'2026-11-14', opp:'נגד Kansas State' },
+      { date:'21 בנובמבר', iso:'2026-11-21', opp:'נגד Utah' },
+    ],
+    note:'ב-6/11 וב-26/11 משחקי חוץ (Arizona, Texas Tech).' },
+  { tier:'college', emoji:'🎓', sport:'פוטבול קולג\'', name:'SMU Mustangs', league:'NCAA · ACC', venue:'Gerald J. Ford Stadium', city:'דאלאס, טקסס', firstDate:'2026-10-24',
+    games:[
+      { date:'24 באוקטובר', iso:'2026-10-24', opp:'נגד Cal (11:00)' },
+      { date:'6 בנובמבר', iso:'2026-11-06', opp:'נגד Virginia Tech (18:00)' },
+      { date:'14 בנובמבר', iso:'2026-11-14', opp:'נגד Wake Forest' },
+    ] },
+  { tier:'college', emoji:'🎓', sport:'פוטבול קולג\'', name:'North Texas Mean Green', league:'NCAA · American Conference', venue:'DATCU Stadium', city:'דנטון, טקסס', firstDate:'2026-10-29',
+    games:[
+      { date:'29 באוקטובר', iso:'2026-10-29', opp:'נגד Florida Atlantic (חמישי)' },
+      { date:'7 בנובמבר', iso:'2026-11-07', opp:'נגד Rice' },
+      { date:'28 בנובמבר', iso:'2026-11-28', opp:'נגד UAB' },
+    ] },
+  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של ארצות הברית (אוסטין)', league:'Formula 1', venue:'Circuit of the Americas', city:'אוסטין, טקסס', firstDate:'2026-10-25',
+    games:[
+      { date:'25 באוקטובר', iso:'2026-10-25', opp:'מרוץ — שידור טלוויזיה (אוסטין, כשעה וחצי מדאלאס)' },
+    ] },
+  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של מקסיקו', league:'Formula 1', venue:'Autodromo Hermanos Rodriguez', city:'מקסיקו סיטי', firstDate:'2026-11-01',
+    games:[
+      { date:'1 בנובמבר', iso:'2026-11-01', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' },
+    ] },
+  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של ברזיל', league:'Formula 1', venue:'Interlagos', city:'סאו פאולו, ברזיל', firstDate:'2026-11-08',
+    games:[
+      { date:'8 בנובמבר', iso:'2026-11-08', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' },
+    ] },
+  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של לאס וגאס', league:'Formula 1', venue:'Las Vegas Strip Circuit', city:'לאס וגאס, נבדה', firstDate:'2026-11-21',
+    games:[
+      { date:'21 בנובמבר', iso:'2026-11-21', opp:'מרוץ ליל שבת — שידור טלוויזיה (לא בדאלאס)' },
+    ] },
+  { tier:'motorsport', emoji:'🏎️', sport:'ספורט מוטורי', name:'הגראנד פרי של קטאר', league:'Formula 1', venue:'Lusail International Circuit', city:'לוסייל, קטאר', firstDate:'2026-11-29',
+    games:[
+      { date:'29 בנובמבר', iso:'2026-11-29', opp:'מרוץ — שידור טלוויזיה (לא בדאלאס)' },
+    ] },
 ];
 
 // גבול העדכון החיצוני של המחקר הידני (עד כאן נבדקו לוחות זמנים בפועל) - כשהתאריך הנוכחי
 // עובר את זה, סימן שהגיע הזמן לסבב מחקר/עדכון נתונים חדש לחודש הבא (לא קשור לסינון למטה).
-const MONTH_DATA_RESEARCHED_THROUGH = '2026-10-15';
+const MONTH_DATA_RESEARCHED_THROUGH = '2026-11-30';
 
 // עדכון 28/09/2026 (ביוזמת ניר, פעמיים: "החלון לא מתגלגל" + "משחקי RoughRiders מה-17-18/9
 // שכבר עברו עדיין מוצגים כ'בחודש הקרוב'"): הטקסט הקודם רק "חישב" מחדש את אותו טווח קבוע -
@@ -2961,7 +3008,7 @@ const XFINITY_2026 = [
   // עדכון 15/09/2026: נוספו מרוצי הפלייאוף עד גמר העונה (אומת מול nascar.com)
   { name: "NASCAR O'Reilly at Bristol", track: 'Bristol Motor Speedway', city: 'Bristol, TN', date: '2026-09-18T23:30:00Z', tv: 'The CW' },
   { name: "NASCAR O'Reilly at Las Vegas", track: 'Las Vegas Motor Speedway', city: 'Las Vegas, NV', date: '2026-10-03T23:30:00Z', tv: 'The CW' },
-  { name: "NASCAR O'Reilly at Charlotte (Roval)", track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-10-10T20:00:00Z', tv: 'The CW' },
+  { name: "NASCAR O'Reilly at Charlotte", track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-10-10T20:00:00Z', tv: 'The CW' },
   { name: "NASCAR O'Reilly at Phoenix", track: 'Phoenix Raceway', city: 'Avondale, AZ', date: '2026-10-17T23:30:00Z', tv: 'The CW' },
   { name: "NASCAR O'Reilly at Talladega", track: 'Talladega Superspeedway', city: 'Talladega, AL', date: '2026-10-24T19:30:00Z', tv: 'The CW' },
   { name: "NASCAR O'Reilly at Martinsville", track: 'Martinsville Speedway', city: 'Martinsville, VA', date: '2026-10-31T20:00:00Z', tv: 'The CW' },
@@ -3070,14 +3117,14 @@ async function loadDailyNASCAR() {
     { name: 'Daytona Night Race', track: 'Daytona International Speedway', city: 'Daytona Beach, FL', date: '2026-08-29T23:30:00Z', tv: 'USA Network' },
     // עדכון 16/09/2026: נוסף לוח הפלייאוף (Round of 16/12/8 + גמר) - פוספס בעדכון הקודם שהוסיף רק ל-Xfinity/Truck/IndyCar/MotoGP
     // (Darlington 6/9 ו-WWTR/St. Louis 13/9 כבר עברו נכון ל-16/9, לא נוספו) - אומת מול nascar.com PDF רשמי
-    { name: 'NASCAR Cup Series at Bristol (Round of 16)', track: 'Bristol Motor Speedway', city: 'Bristol, TN', date: '2026-09-19T23:30:00Z', tv: 'USA Network' },
-    { name: 'NASCAR Cup Series at Kansas (Round of 16)', track: 'Kansas Speedway', city: 'Kansas City, KS', date: '2026-09-27T19:00:00Z', tv: 'USA Network' },
-    { name: 'NASCAR Cup Series at Las Vegas (Round of 12)', track: 'Las Vegas Motor Speedway', city: 'Las Vegas, NV', date: '2026-10-04T21:30:00Z', tv: 'USA Network' },
-    { name: 'NASCAR Cup Series at Charlotte Roval (Round of 12)', track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-10-11T19:00:00Z', tv: 'USA Network' },
-    { name: 'NASCAR Cup Series at Phoenix (Round of 12)', track: 'Phoenix Raceway', city: 'Avondale, AZ', date: '2026-10-18T19:00:00Z', tv: 'USA Network' },
-    { name: 'NASCAR Cup Series at Talladega (Round of 8)', track: 'Talladega Superspeedway', city: 'Talladega, AL', date: '2026-10-25T18:00:00Z', tv: 'NBC' },
-    { name: 'NASCAR Cup Series at Martinsville (Round of 8)', track: 'Martinsville Speedway', city: 'Martinsville, VA', date: '2026-11-01T19:00:00Z', tv: 'NBC' },
-    { name: 'NASCAR Cup Series Championship — Homestead-Miami', track: 'Homestead-Miami Speedway', city: 'Homestead, FL', date: '2026-11-08T20:00:00Z', tv: 'NBC' },
+    { name: 'NASCAR Cup Series at Bristol (פלייאוף)', track: 'Bristol Motor Speedway', city: 'Bristol, TN', date: '2026-09-19T23:30:00Z', tv: 'USA Network / HBO Max' },
+    { name: 'NASCAR Cup Series at Kansas (פלייאוף)', track: 'Kansas Speedway', city: 'Kansas City, KS', date: '2026-09-27T19:00:00Z', tv: 'USA Network / HBO Max' },
+    { name: 'South Point 400 — Las Vegas (פלייאוף)', track: 'Las Vegas Motor Speedway', city: 'Las Vegas, NV', date: '2026-10-04T21:30:00Z', tv: 'USA Network / HBO Max' },
+    { name: 'NASCAR Cup Series at Charlotte (פלייאוף)', track: 'Charlotte Motor Speedway', city: 'Concord, NC', date: '2026-10-11T19:00:00Z', tv: 'USA Network / HBO Max' },
+    { name: 'NASCAR Cup Series at Phoenix (פלייאוף)', track: 'Phoenix Raceway', city: 'Avondale, AZ', date: '2026-10-18T19:00:00Z', tv: 'USA Network / HBO Max' },
+    { name: 'NASCAR Cup Series at Talladega (פלייאוף)', track: 'Talladega Superspeedway', city: 'Talladega, AL', date: '2026-10-25T18:00:00Z', tv: 'NBC / HBO Max' },
+    { name: 'NASCAR Cup Series at Martinsville (פלייאוף)', track: 'Martinsville Speedway', city: 'Martinsville, VA', date: '2026-11-01T19:00:00Z', tv: 'NBC / HBO Max' },
+    { name: 'NASCAR Cup Series Championship — Homestead-Miami', track: 'Homestead-Miami Speedway', city: 'Homestead, FL', date: '2026-11-08T20:00:00Z', tv: 'NBC / HBO Max' },
   ];
 
   try {

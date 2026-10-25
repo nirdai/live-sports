@@ -221,6 +221,11 @@
 - דף "משחקים בחודש הקרוב" **יתיישן ב-15/10/2026** — כשמבקשים עדכון לחודש הבא: (א) לקבוע טווח תאריכים חדש, (ב) לבדוק מחדש אילו ליגות/קבוצות פעילות באותו טווח, (ג) לחפש לוחות זמנים עדכניים, (ד) לזכור את בעיית ה-bidi, (ה) לנסות שוב לאמת לוח משחקים ל-North Texas SC (לא הצליח באוקטובר 2026).
 - קטגוריית "פורמולה 1 (משודר)" בדף "החודש הקרוב" היא תוספת חד-פעמית לפי בקשה — לא ברור אם ניר רוצה שהיא תישאר קבועה בכל עדכון חודשי הבא או רק כשיש מרוץ רלוונטי/הוא מבקש זאת שוב. לשאול אותו או להחליט לפי הקשר בעדכון הבא.
 
+**24/10/2026 — סבב עדכון נתונים (לפי בקשה: "תריץ עדכונים, תביא נתונים מכל מקום"):**
+1. `MONTH_GAMES` נבנה מחדש לטווח 24/10–30/11/2026 (`MONTH_DATA_RESEARCHED_THROUGH = '2026-11-30'`). מקורות: dallascowboys.com, nbaschedules.com (Mavericks), usaschedule.com + bleacherreport (Stars; 25/10 מול Islanders אומת גם בפרסומי משחק), bigdsoccer (FC Dallas — העפילה לפלייאוף, פלייאוף מ-18/11, משחקי בית בסיבוב הראשון לא מאושרים), dallasweekly (Trinity FC; אצטדיון נובמבר לא אומת), allenamericans.com, texas.gleague.nba.com, gofrogs.com / smumustangs.com / meangreensports.com, crash.net (F1: אוסטין 25/10, מקסיקו 1/11, ברזיל 8/11, לאס וגאס 21/11, קטאר 29/11).
+2. הוסרו Rangers (עונת חופש) ומשחקי הטווח הישן. נוספו Trinity FC, Allen Americans, Texas Legends (ליגות משניות) ו-F1 ארה"ב באוסטין.
+3. לא נבדק / לא נכלל: Dallas Sidekicks, Lone Star Brahmas (לוח מלא לא נמצא), North Texas SC, Fort Worth Vaqueros, Ariat Texas Rattlers, כדורסל קולג', Dallas Wings. Allen Americans 21/11 לא אומת. שעת MotoGP אוסטרליה (25/10) לא אומתה.
+
 ## מבנה הקוד (חשוב לפני כל עריכה עתידית)
 - **ניווט (`showPage`)**: טאבים עליונים שמראים/מסתירים דפים (`div` עם class `visible`/`hidden`). כל דף חדש: כפתור ב-`.top-nav`, div לדף, מקרה ב-`showPage()`. דפים "כבדים" נבנים lazy (בלחיצה ראשונה) עם flag כמו `window._xBuilt`.
 - **דף ראשי (main-page)**: "היום" (NBA/UCL/NFL/F1/NHL/MLB/NASCAR ותתי-סדרות/IndyCar/MotoGP), "אתמול", כרטיסיות אישיות (`entries` — כולל כעת גם FC Barcelona ו-Real Madrid), וסקשן "דאלאס השבוע" (`DALLAS_TEAMS` + `loadDallasWeek`, חי מ-ESPN, טווח 7 ימים).
